@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
-from notion_client import Client as NotionClient
+from notion_client import AsyncClient as NotionClient
 
 from settings import NOTION_TOKEN
 
@@ -38,16 +38,16 @@ class Task:
         self.subject = data["properties"]["科目"]["select"]["name"] or "無科目"
         self.deadline = datetime.fromisoformat(
             data["properties"]["截止日期"]["date"]["start"]
-        )
+        ).astimezone(ZoneInfo("Asia/Taipei"))
 
 
-def get_upcoming_tasks() -> list[Task]:
+async def get_upcoming_tasks() -> list[Task]:
     """取得所有未來的作業
 
     Returns:
         list[Task]: 未來的作業列表
     """
-    tasks: dict[str, Any | list[dict]] = notion.data_sources.query(
+    tasks: dict[str, Any | list[dict]] = await notion.data_sources.query(
         "262be96b-9601-8014-bb40-000b34f82910",
         filter={
             "property": "截止日期",

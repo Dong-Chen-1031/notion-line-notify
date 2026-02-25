@@ -51,6 +51,7 @@ async def reply(
     messages: list[dict[str, Any]],
     notificationDisabled: bool,
 ) -> dict:
+    # op(messages)
     resp = await client.post(
         "https://api.line.me/v2/bot/message/reply",
         headers=headers,
@@ -70,6 +71,7 @@ async def push(
     messages: list[dict[str, Any]],
     notificationDisabled: bool,
 ) -> dict:
+    # op(messages)
     resp = await client.post(
         "https://api.line.me/v2/bot/message/push",
         headers=headers,

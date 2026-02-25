@@ -1,9 +1,12 @@
-import asyncio
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
-from api.classroom import send_announcement
-from api.notion import get_upcoming_tasks
+from objprint import op
+
+from api.notion import Task, get_upcoming_tasks
 from linex import Client, TextMessageContext, logger
-from settings import GC_TOKEN_PATH, GROUP_ID, LINE_DEVS_ID
+from linex.models.messages import Flex
+from settings import GROUP_ID, LINE_DEVS_ID
 
 client = Client(
     "3e0ee60f2b434fd37ae6791b1e62c2c5",
@@ -22,36 +25,140 @@ async def send(ctx: TextMessageContext):
     if author.id != LINE_DEVS_ID:
         return
     await send_message()
-    await ctx.reply("已發送作業訊息！")
+    await ctx.reply("已發送作業訊息到群組！")
 
 
-@client.command(name="login")
-async def login(ctx: TextMessageContext): ...
+@client.event
+async def on_join(ctx: TextMessageContext):
+    op(await ctx.group())
+
+
+@client.command(name="test")
+async def test(ctx: TextMessageContext):
+    author = await ctx.author()
+    if author.id != LINE_DEVS_ID:
+        return
+    # await send_message()
+    await ctx.reply(create_line_message(await get_upcoming_tasks()))
 
 
 @client.event
 async def on_text(ctx: TextMessageContext):
-    if ctx.text in ["send", "login"]:
+    if ctx.text in ["send", "group", "test"]:
         return
     if ctx.source_type == "user":
         await ctx.reply("有讀狀態訊息的同學都知道，不要私訊我，要私訊請找另一個 Dong。")
 
 
+weekday_to_chinese = ["一", "二", "三", "四", "五", "六", "日"]
+
+
+def smarter_format_date(date: datetime) -> str:
+    now = datetime.now(ZoneInfo("Asia/Taipei")).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    timedelta_ = date - now
+    if timedelta_.days == 0:
+        return "今天"
+    elif timedelta_.days == 1:
+        return "明天"
+    elif timedelta_.days == 2:
+        return "後天"
+    else:
+        week_delta = now.isocalendar().week - date.isocalendar().week
+        if week_delta == 0:
+            return f"本週{weekday_to_chinese[date.weekday()]}"
+        elif week_delta == -1:
+            return f"下週{weekday_to_chinese[date.weekday()]}"
+        else:
+            return date.strftime("%m/%d") + f" ({weekday_to_chinese[date.weekday()]})"
+
+
+def create_line_message(tasks: list[Task]) -> Flex:
+    now = datetime.now(ZoneInfo("Asia/Taipei"))
+    date = f"{now.month}/{now.day} ({weekday_to_chinese[now.weekday()]})"
+    tasks_by_subject: dict[str, list[Task]] = {}
+    for task in tasks:
+        tasks_by_subject.setdefault(task.subject, []).append(task)
+
+    tasks_str_by_subject: dict[str, str] = {}
+
+    for subject, tasks in tasks_by_subject.items():
+        tasks_str = "\n".join(
+            [
+                f"{i + 1}. {smarter_format_date(task.deadline)} {task.name}"
+                for i, task in enumerate(tasks)
+            ]
+        )
+        tasks_str_by_subject[subject] = tasks_str.strip()
+
+    message = Flex(
+        {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"{date} 的作業",
+                        "weight": "bold",
+                        "size": "xl",
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "margin": "lg",
+                        "spacing": "sm",
+                        "contents": [
+                            {
+                                "type": "box",
+                                "layout": "baseline",
+                                "spacing": "sm",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": subject,
+                                        "color": "#aaaaaa",
+                                        "size": "sm",
+                                        "flex": 2,
+                                    },
+                                    {
+                                        "type": "text",
+                                        "text": tasks_str,
+                                        "wrap": True,
+                                        "color": "#666666",
+                                        "size": "sm",
+                                        "flex": 6,
+                                    },
+                                ],
+                            }
+                            for subject, tasks_str in tasks_str_by_subject.items()
+                        ],
+                    },
+                ],
+            },
+            "styles": {"header": {"separator": False}},
+        },
+        alt_text=f"{date} 的作業\n"
+        + "\n".join(
+            [
+                f"{subject}:\n{tasks_str}"
+                for subject, tasks_str in tasks_str_by_subject.items()
+            ]
+        ),
+    )
+    return message
+
+
 async def send_message():
     msg = ""
-    tasks = get_upcoming_tasks()
-    if tasks:
-        msg += "以下是未來的作業：\n"
-        for task in tasks:
-            msg += f"- {task.subject} - {task.name}  |  截止日期：{task.deadline.strftime('%Y-%m-%d')}\n"
-    else:
-        msg += "\n\n目前沒有未來的作業。"
+    tasks = await get_upcoming_tasks()
+
     await client.send_message(
         GROUP_ID,
-        msg,
+        create_line_message(tasks),
     )
-
-    await asyncio.to_thread(lambda: send_announcement(msg, token_path=GC_TOKEN_PATH))
 
 
 client.run(port=11111)

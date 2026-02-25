@@ -505,6 +505,18 @@ class Templates:
             return self.json
 
 
+class Flex(AbstractLineMessage):
+    def __init__(
+        self, contents: list | dict, alt_text: str = "This is a flex message"
+    ) -> None:
+        if alt_text == "":
+            raise ValueError("altText must not be an empty string")
+        self.json = {"type": "flex", "altText": alt_text, "contents": contents}
+
+    def to_json(self) -> dict:
+        return self.json
+
+
 def _to_valid_message_objects(
     messages: tuple[AbstractLineMessage | dict | str] | Any,
 ) -> list[dict]:
