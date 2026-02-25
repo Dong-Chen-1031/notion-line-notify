@@ -28,21 +28,19 @@ class QuickReplyButton:
             location action, and ``image_url`` is not set, the default icon is
             displayed. The URL should be percent-encoded using UTF-8.
     """
-    __slots__ = (
-        'json',
-    )
+
+    __slots__ = ("json",)
     json: dict[str, Any]
 
     def __init__(
-        self,
-        action: AbstractLineAction | dict,
-        image_url: Optional[str] = None
+        self, action: AbstractLineAction | dict, image_url: Optional[str] = None
     ):
         self.json = {
             "type": "action",
-            "action": action.to_json() # type: ignore
-            if isinstance(action, AbstractLineAction) else action,
-            "imageUrl": image_url
+            "action": action.to_json()
+            if isinstance(action, AbstractLineAction)
+            else action,
+            "imageUrl": image_url,
         }
 
     def to_json(self) -> dict[str, Any]:

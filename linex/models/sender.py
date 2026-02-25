@@ -10,23 +10,14 @@ class Sender:
         icon_url (str, optional): URL of the image to display as an icon when sending
             a message
     """
-    __slots__ = (
-        'name',
-        'icon_url'
-    )
+
+    __slots__ = ("name", "icon_url")
     name: Optional[str]
     icon_url: Optional[str]
 
-    def __init__(
-        self,
-        *,
-        name: Optional[str],
-        icon_url: Optional[str]
-    ):
+    def __init__(self, *, name: Optional[str], icon_url: Optional[str]):
         if not name and not icon_url:
-            raise ValueError(
-                "Must provide either the name or the icon URL, or both."
-            )
+            raise ValueError("Must provide either the name or the icon URL, or both.")
 
         if name and "line" in name.lower():
             raise ValueError(
@@ -38,7 +29,4 @@ class Sender:
 
     def to_json(self):
         """Converts to a valid JSON payload."""
-        return {
-            "name": self.name,
-            "iconUrl": self.icon_url
-        }
+        return {"name": self.name, "iconUrl": self.icon_url}
