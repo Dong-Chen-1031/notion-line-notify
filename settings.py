@@ -15,3 +15,7 @@ GC_CREDENTIALS_PATH = os.getenv("GC_CREDENTIALS_PATH", "keys/credentials.json")
 LINE_DEVS_ID = os.getenv("LINE_DEVS_ID", "")
 
 PORT = int(os.getenv("PORT", "11111"))
+
+
+LINE_TOKEN = os.getenv("LINE_TOKEN", "")
+CHANNEL_SECRET = os.getenv("CHANNEL_SECRET", "")

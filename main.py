@@ -7,11 +7,11 @@ from objprint import op
 from api.notion import Task, get_upcoming_tasks
 from linex import Client, TextMessageContext, logger
 from linex.models.messages import Flex
-from settings import GROUP_ID, LINE_DEVS_ID, PORT
+from settings import CHANNEL_SECRET, GROUP_ID, LINE_DEVS_ID, LINE_TOKEN, PORT
 
 client = Client(
-    "3e0ee60f2b434fd37ae6791b1e62c2c5",
-    "6RwBxvXE63Cgcq4FHOR2SamjX/UQEblQKFCRC3vcgbS2hHcP/JQOAQG1Ip1SOYhDhm9zEGwqbOGxPyZxqn9Ygoc66i4+qsc3vTtPTLgHq7w3tR1pq4ZkP46G4opuUpUFzR7LoPKfeo40KhX3vgre2QdB04t89/1O/w1cDnyilFU=",
+    CHANNEL_SECRET,
+    LINE_TOKEN,
 )
 
 scheduler = AsyncIOScheduler()

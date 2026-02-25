@@ -251,7 +251,7 @@ class Client:
             "app": self.app,
             "host": "0.0.0.0",
             "port": 8080,
-            "log_level": logging.WARNING,  # only fatal errors
+            "log_level": logging.WARNING,
             **kwargs,
         }
         uvicorn.run(**self.start_kwargs)
