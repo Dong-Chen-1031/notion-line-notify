@@ -7,7 +7,7 @@ from objprint import op
 from api.notion import Task, get_upcoming_tasks
 from linex import Client, TextMessageContext, logger
 from linex.models.messages import Flex
-from settings import GROUP_ID, LINE_DEVS_ID
+from settings import GROUP_ID, LINE_DEVS_ID, PORT
 
 client = Client(
     "3e0ee60f2b434fd37ae6791b1e62c2c5",
@@ -173,4 +173,4 @@ scheduler.add_job(
 )
 
 
-client.run(port=11111)
+client.run(port=PORT)
