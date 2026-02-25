@@ -10,7 +10,7 @@ import socket
 import uuid
 from contextlib import asynccontextmanager
 from inspect import iscoroutinefunction as is_coro
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Literal, Optional
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -345,13 +345,25 @@ class Client:
     def clear_cache(self) -> None:
         """Clears all of the cache.
 
-        .. warning ::
-            This action is NOT revertable.
+        This action is NOT revertable.
         """
         # lol funni joke
         victims = (GROUPS, USERS, MESSAGES)
         for target in victims:
             target.clear()
+
+    def clear_cache_for(self, *targets: Literal["groups", "users", "messages"]):
+        """Clear the cache for specific targets.
+
+        Example:
+        ```python
+        clear_cache_for("messages")
+        clear_cache_for("groups", "users", "messages")
+        ```
+        """
+        victims = {"groups": GROUPS, "users": USERS, "messages": MESSAGES}
+        for target in targets:
+            victims[target].clear()
 
     async def wait_for(
         self,
