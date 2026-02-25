@@ -281,7 +281,7 @@ class Client:
             )
         logger.print()
 
-        self.user = BotUser(await get_bot_info(self.headers))
+        self.user = BotUser.from_json(await get_bot_info(self.headers))
         USERS[self.user.id] = self.user
 
         self.is_ready = True

@@ -42,7 +42,8 @@ class BotUser:
     if the "chat" feature is set to "On", ``manual`` is returned.
     """
 
-    def from_json(self, data: dict[str, str]) -> "BotUser":
+    @staticmethod
+    def from_json(data: dict[str, str]) -> "BotUser":
         return BotUser(
             id=data["userId"],
             basic_id=data["basicId"],
