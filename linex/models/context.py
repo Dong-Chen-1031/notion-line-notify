@@ -4,6 +4,7 @@ from __future__ import annotations
 import mimetypes as MT
 import time
 import uuid
+from dataclasses import dataclass
 from typing import Any, Literal, Optional
 
 import httpx
@@ -20,6 +21,7 @@ from .sender import Sender
 from .user import BotUser, User
 
 
+@dataclass(frozen=True)
 class BaseContext:
     """Represents a base context.
 
@@ -28,143 +30,108 @@ class BaseContext:
         _client (:obj:`AsyncClient`): Client.
     """
 
-    __slots__ = (
-        "event_type",
-        "_event_id",
-        "_is_redelivery",
-        "_timestamp",
-        "_source",
-        "_reply_token",
-        "_mode",
-        "ping",
-        "client",
-        "headers",
-    )
     event_type: str
-    _event_id: str
-    _is_redelivery: bool
-    _timestamp: int
-    _source: dict[str, str]
-    _reply_token: Optional[str]
-    _mode: Literal["active", "standby"]
-    ping: float
+
+    event_id: str
+    """Webhook event ID."""
+
+    is_redelivery: bool
+    """Whether this event is a webhook redelivery."""
+
+    timestamp: int
+    """The timestamp in seconds.
+
+    Could be used to calculate the ping.
+    """
+
+    source: dict[str, str]
+    """The message source.
+
+    Could be a user, group chat, or multi-person chat.
+    """
+
+    reply_token: str | None
+    """The reply token.
+
+    May not be present if ``mode`` is ``standby``
+    """
+
+    mode: Literal["active", "standby"]
+    """Channel state.
+
+    * ``active``: The channel is active. You can send a reply message or
+        push message, etc.
+    * ``standby``: The channel is waiting for the
+        `module <https://developers.line.biz/en/docs/partner-docs/module/>`_ to reply.
+        At this point, you cannot reply the message.
+    """
+
     client: httpx.AsyncClient
     headers: dict[str, str]
 
-    _author: Optional[User] = None
-    _group: Optional[Group] = None
-
-    def __init__(
-        self, data: dict[str, Any], _client: httpx.AsyncClient, _headers: dict[str, str]
-    ):
-        self.event_type = data["type"]
-        self._event_id = data["webhookEventId"]
-        self._is_redelivery = data["deliveryContext"]["isRedelivery"]
-        self._timestamp = data["timestamp"] / 1000
-        self._source = data["source"]
-        self._reply_token = data.get("replyToken")
-        self._mode = data["mode"]
-        self.ping = time.time() - self._timestamp
-        self.client = _client
-        self.headers = _headers
-
-    @property
-    def event_id(self) -> str:
-        """The webhook event ID."""
-        return self._event_id
-
-    @property
-    def is_redelivery(self) -> bool:
-        """Whether this event is a webhook redelivery."""
-        return self._is_redelivery
-
-    @property
-    def timestamp(self) -> int:
-        """The timestamp.
-
-        Could be used to calculate the ping.
-        """
-        return self._timestamp
-
-    @property
-    def source(self) -> dict[str, str]:
-        """The message source.
-
-        Could be a user, group chat, or multi-person chat.
-        """
-        return self._source
-
-    @property
-    def reply_token(self) -> Optional[str]:
-        """The reply token.
-
-        May not contain a reply token if ``mode`` is ``standby``
-        """
-        return self._reply_token
-
-    @property
-    def mode(self) -> Literal["active", "standby"]:
-        """Channel state.
-
-        * ``active``: The channel is active. You can send a reply message or
-            push message, etc.
-        * ``standby``: The channel is waiting for the
-            `module <https://developers.line.biz/en/docs/partner-docs/module/>`_ to reply.
-            At this point, you cannot reply the message.
-        """
-        return self._mode
+    @staticmethod
+    def create(
+        data: dict[str, Any], client: httpx.AsyncClient, headers: dict[str, str]
+    ) -> BaseContext:
+        return BaseContext(
+            event_type=data["type"],
+            event_id=data["webhookEventId"],
+            is_redelivery=data["deliveryContext"]["isRedelivery"],
+            timestamp=data["timestamp"] / 1000,
+            source=data["source"],
+            reply_token=data.get("replyToken"),
+            mode=data["mode"],
+            client=client,
+            headers=headers,
+        )
 
     @property
     def is_active(self) -> bool:
         """A shortcut for detecting whether the current mode is active.
 
         Example:
-            .. code-block :: python
 
-                if not ctx.is_active:
-                    return
+        ```python
+        if not ctx.is_active:
+            return
+        ```
         """
         return self.mode == "active"
 
     @property
     def source_type(self) -> Literal["user", "group", "room"]:
         """Checks the chat (source) type."""
-        return self._source["type"]  # type: ignore
+        return self._source["type"]  # pyright: ignore reportReturnType
 
     async def author(self) -> User:
-        """Fetches the author if not already.
+        """Fetches the author. (coroutine)"""
+        author = User.from_json(
+            await get_user(self.client, self.headers, self.source["userId"])
+        )
+        USERS[author.id] = author
 
-        Otherwise, returns cached instead. (coroutine)
-        """
+        return author
 
-        if not self._author:
-            self._author = User(
-                await get_user(self.client, self.headers, self.source["userId"])
-            )  # type: ignore
-            USERS[self._author.id] = self._author
-
-        return self._author
-
+    # alias
     user = author
 
     async def group(self) -> Group:
         """Fetches group information."""
-        if self._source["type"] != "group":
+        if self.source["type"] != "group":
             raise TypeError("This is not a group chat.")
 
-        if not self._group:
-            self._group = Group(  # type: ignore
-                await get_group_chat_summary(
-                    self.client, self.headers, self._source["groupId"]
-                ),
-                self.headers,
-                self.client,
-            )
-            GROUPS[self._group.id] = self._group
-
-        return self._group
+        group = Group(
+            await get_group_chat_summary(
+                self.client, self.headers, self.source["groupId"]
+            ),
+            self.headers,
+            self.client,
+        )
+        GROUPS[group.id] = group
+        return group
 
 
+@dataclass(frozen=True)
 class RepliableContext(BaseContext):
     """A repliable context.
 

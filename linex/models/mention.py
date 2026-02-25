@@ -11,46 +11,42 @@ class Mention:
     """Represents a LINE user mention.
 
     Args:
-        type (str): The mention type.
-        user (:obj:`User` | dict, optional): The user. Required when ``type`` is `user`.
+        type: The mention type.
+        user (optional): The user object or the ID. Required when `type` is `user`.
     """
-    __slots__ = (
-        'type',
-        'user_id'
-    )
-    type: Literal['all', 'user']
+
+    __slots__ = ("type", "user_id")
+    type: Literal["all", "user"]
     user_id: Optional[str]
 
     def __init__(
         self,
-        type: Literal['all', 'user'] = "user",
+        type: Literal["all", "user"] = "user",
         *,
-        user: Optional[User | dict] = None
+        user: Optional[User | dict | str] = None,
     ):
         if type == "all" and user:
             raise TypeError("When `type` is set to `all`, `user` should remain None.")
 
         if type == "user" and not user:
             raise TypeError("Keyword-only argument `user` was not given.")
-    
+
         self.type = type
-        if type == 'user' and user:
+        if type == "user" and user:
             # pass type check
             if isinstance(user, dict):
-                self.user_id = user['id']
+                self.user_id = user["id"]
+            elif isinstance(user, str):
+                self.user_id = user
             else:
                 self.user_id = user.id
 
-
     def to_json(self) -> dict:
         """Converts to a valid JSON."""
-        return {
-            "type": self.type,
-            "userId": self.user_id
-        }
+        return {"type": self.type, "userId": self.user_id}
 
     def __repr__(self) -> str:
-        return f"<Mention of {self.user_id!r}>"
+        return f"Mention(type={self.type!r}, user_id={self.user_id!r})"
 
     @staticmethod
     def all() -> Mention:
@@ -73,17 +69,11 @@ class Mention:
         Args:
             id (str): The user ID.
         """
-        return Mention(
-            "user",
-            user={
-                "id": id
-            }
-        )
+        return Mention("user", user={"id": id})
 
     @staticmethod
     def includes_mention(
-        mentionees: list[dict[str, int | str]], 
-        user: BotUser | User | str
+        mentionees: list[dict[str, int | str]], user: BotUser | User | str
     ) -> bool:
         """Check whether a user / the bot is being mentioned in a message or not.
 
@@ -105,13 +95,13 @@ class Mention:
                 ])
         """
         mentions = []
-        
+
         for mention in mentionees:
-            if mention['type'] == 'all':
+            if mention["type"] == "all":
                 return True
-    
-            mentions.append(mention['userId'])
-            
+
+            mentions.append(mention["userId"])
+
         if isinstance(user, str):
             return user in mentions
         else:

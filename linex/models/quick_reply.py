@@ -1,8 +1,10 @@
-from typing import Any, Optional
+from dataclasses import dataclass
+from typing import Any
 
 from ..abc import AbstractLineAction
 
 
+@dataclass(frozen=True)
 class QuickReplyButton:
     """This is a quick reply option that is displayed as a button.
 
@@ -29,19 +31,14 @@ class QuickReplyButton:
             displayed. The URL should be percent-encoded using UTF-8.
     """
 
-    __slots__ = ("json",)
-    json: dict[str, Any]
-
-    def __init__(
-        self, action: AbstractLineAction | dict, image_url: Optional[str] = None
-    ):
-        self.json = {
-            "type": "action",
-            "action": action.to_json()
-            if isinstance(action, AbstractLineAction)
-            else action,
-            "imageUrl": image_url,
-        }
+    action: AbstractLineAction | dict
+    image_url: str | None = None
 
     def to_json(self) -> dict[str, Any]:
-        return self.json
+        return {
+            "type": "action",
+            "action": self.action.to_json()
+            if isinstance(self.action, AbstractLineAction)
+            else self.action,
+            "imageUrl": self.image_url,
+        }

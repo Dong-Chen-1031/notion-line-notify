@@ -1,16 +1,12 @@
 # ruff: noqa: E501
 
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 
 @dataclass(frozen=True)
 class BotUser:
-    """Represents a LINE bot user.
-
-    Args:
-        data (dict of str: str): The data in JSON, or dictionary.
-    """
+    """Represents a LINE bot user."""
 
     id: str
     """Represents the bot ID."""
@@ -54,6 +50,7 @@ class BotUser:
         )
 
 
+@dataclass(frozen=True)
 class User:
     """Represents a regular LINE user.
 
@@ -61,65 +58,37 @@ class User:
         data (dict of str: str): The data in JSON, or dictionary.
     """
 
-    __slots__ = (
-        "_user_id",
-        "_display_name",
-        "_language",
-        "_picture_url",
-        "_status_message",
-    )
+    id: str
+    """Represents the user ID."""
 
-    def __init__(self, data: dict[str, str]):
-        self._user_id = data["userId"]
-        self._display_name = data["displayName"]
-        self._language = data.get("language", "en")
-        self._picture_url = data.get("pictureUrl")
-        self._status_message = data.get("statusMessage")
+    display_name: str
+    """The user's display name."""
 
-    @property
-    def id(self) -> str:
-        """Represents the user ID."""
-        return self._user_id
+    language: str
+    """User's language, as a `BCP 47 <https://www.rfc-editor.org/info/bcp47>`_ language tag.
 
-    @property
-    def display_name(self) -> str:
-        """The user's display name."""
-        return self._display_name
+    If the user hasn't yet consented to the LINE Privacy Policy, returns ``en``.
+    e.g. ``en`` for English.
+    """
 
-    name = display_name
+    picture_url: str | None
+    """The user's picture URL, or avatar.
 
-    @property
-    def language(self) -> str:
-        """User's language, as a `BCP 47 <https://www.rfc-editor.org/info/bcp47>`_ language tag.
+    May be none.
+    """
 
-        If the user hasn't yet consented to the LINE Privacy Policy, returns ``en``.
-        e.g. ``en`` for English.
-        """
-        return self._language
+    status_message: str | None
+    """The user's status message.
 
-    @property
-    def picture_url(self) -> Optional[str]:
-        """The user's picture URL, or avatar.
+    May be none.
+    """
 
-        May be none.
-        """
-        return self._picture_url
-
-    avatar = picture = avatar_url = picture_url
-
-    @property
-    def status_message(self) -> Optional[str]:
-        """The user's status message.
-
-        May be none.
-        """
-        return self._status_message
-
-    status = status_message
-
-    def __repr__(self) -> str:
-        return (
-            f"<User id={self.id!r} display_name={self.display_name!r} "
-            f"picture_url={self.picture_url!r} "
-            f"language={self.language!r} status={self.status!r}>"
+    @staticmethod
+    def from_json(data: dict[str, str]) -> "User":
+        return User(
+            id=data["userId"],
+            display_name=data["displayName"],
+            language=data.get("language", "en"),
+            picture_url=data.get("pictureUrl"),
+            status_message=data.get("statusMessage"),
         )
