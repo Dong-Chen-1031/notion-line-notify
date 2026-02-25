@@ -1,6 +1,7 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from objprint import op
 
 from api.notion import Task, get_upcoming_tasks
@@ -12,6 +13,8 @@ client = Client(
     "3e0ee60f2b434fd37ae6791b1e62c2c5",
     "6RwBxvXE63Cgcq4FHOR2SamjX/UQEblQKFCRC3vcgbS2hHcP/JQOAQG1Ip1SOYhDhm9zEGwqbOGxPyZxqn9Ygoc66i4+qsc3vTtPTLgHq7w3tR1pq4ZkP46G4opuUpUFzR7LoPKfeo40KhX3vgre2QdB04t89/1O/w1cDnyilFU=",
 )
+
+scheduler = AsyncIOScheduler()
 
 
 @client.event
@@ -152,13 +155,22 @@ def create_line_message(tasks: list[Task]) -> Flex:
 
 
 async def send_message():
-    msg = ""
     tasks = await get_upcoming_tasks()
 
     await client.send_message(
         GROUP_ID,
         create_line_message(tasks),
     )
+
+
+@client.event
+async def on_start():
+    scheduler.start()
+
+
+scheduler.add_job(
+    send_message, "cron", hour=17, minute=0, timezone=ZoneInfo("Asia/Taipei")
+)
 
 
 client.run(port=11111)
