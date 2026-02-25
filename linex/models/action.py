@@ -51,9 +51,8 @@ class Action:
                 ``openKeyboard``. The string can be broken by a newline character.
                 Max character limit: 300
         """
-        __slots__ = (
-            'json',
-        )
+
+        __slots__ = ("json",)
         json: dict[str, Any]
 
         def __init__(
@@ -62,28 +61,22 @@ class Action:
             label: Optional[str] = None,
             display_text: Optional[str] = None,
             input_option: Optional[
-                Literal[
-                    'closeRichMenu', 
-                    'openRichMenu', 
-                    'openKeyboard', 
-                    'openVoice'
-                ]
+                Literal["closeRichMenu", "openRichMenu", "openKeyboard", "openVoice"]
             ] = None,
-            fill_in_text: Optional[str] = None
+            fill_in_text: Optional[str] = None,
         ):
             if fill_in_text and input_option != "openKeyboard":
                 raise ValueError(
-                    "`fill_in_text` is only usable when `input_option`"
-                    "is `openKeyboard`"
+                    "`fill_in_text` is only usable when `input_option`is `openKeyboard`"
                 )
-    
+
             self.json = {
                 "type": "postback",
                 "label": label,
                 "data": data,
                 "displayText": display_text,
                 "inputOption": input_option,
-                "fillInText": fill_in_text
+                "fillInText": fill_in_text,
             }
 
         def to_json(self) -> dict[str, Any]:
@@ -103,21 +96,11 @@ class Action:
                 For more information, see Specifications of the label above.
         """
 
-        __slots__ = (
-            'json',
-        )
+        __slots__ = ("json",)
         json: dict[str, Optional[str]]
 
-        def __init__(
-            self,
-            text: str,
-            label: Optional[str] = None
-        ):
-            self.json = {
-                "type": "message",
-                "label": label,
-                "text": text
-            }
+        def __init__(self, text: str, label: Optional[str] = None):
+            self.json = {"type": "message", "label": label, "text": text}
 
         def to_json(self) -> dict[str, Optional[str]]:
             return self.json
@@ -145,24 +128,21 @@ class Action:
                 This property is supported on 5.12.0 or later
                 for both LINE for macOS and LINE for Windows.
         """
-        __slots__ = (
-            'json',
-        )
+
+        __slots__ = ("json",)
         json: dict[str, Optional[str] | dict[str, Optional[str]]]
 
         def __init__(
             self,
             uri: str,
             label: Optional[str] = None,
-            desktop_uri: Optional[str] = None
+            desktop_uri: Optional[str] = None,
         ):
             self.json = {
                 "type": "uri",
                 "label": label,
                 "uri": uri,
-                "altUri": {
-                    "desktop": desktop_uri
-                }
+                "altUri": {"desktop": desktop_uri},
             }
 
         def to_json(self) -> dict[str, Optional[str] | dict[str, Optional[str]]]:
@@ -195,24 +175,23 @@ class Action:
             _min (str, optional): Smallest date or time value that can be selected.
                 Must be less than the max value.
         """
-        __slots__ = (
-            'json',
-        )
+
+        __slots__ = ("json",)
         patterns = {
             "date": ["%Y-%m-%d"],
             "time": ["%H:%M"],
-            "datetime": ["%Y-%m-%dT%H:%M", "%Y-%m-%dt%H:%M"]
+            "datetime": ["%Y-%m-%dT%H:%M", "%Y-%m-%dt%H:%M"],
         }
         json: dict[str, Optional[str]]
 
         def __init__(
             self,
             data: str,
-            mode: Literal['date', 'time', 'datetime'],
+            mode: Literal["date", "time", "datetime"],
             label: Optional[str] = None,
             initial: Optional[str] = None,
             _max: Optional[str] = None,
-            _min: Optional[str] = None
+            _min: Optional[str] = None,
         ):
             self.json = {
                 "type": "datetimepicker",
@@ -221,7 +200,7 @@ class Action:
                 "mode": mode,
                 "initial": Action.DatetimePicker.validate(mode, initial),
                 "max": Action.DatetimePicker.validate(mode, _max),
-                "min": Action.DatetimePicker.validate(mode, _min)
+                "min": Action.DatetimePicker.validate(mode, _min),
             }
 
         def to_json(self) -> dict[str, Optional[str]]:
@@ -229,8 +208,7 @@ class Action:
 
         @staticmethod
         def validate(
-            mode: Literal['date', 'time', 'datetime'],
-            string: Optional[str] = None
+            mode: Literal["date", "time", "datetime"], string: Optional[str] = None
         ) -> Optional[str]:
             """Validates a string based on a specific datetime picker mode.
 
@@ -261,10 +239,7 @@ class Action:
             return string
 
         @staticmethod
-        def convert(
-            mode: Literal['date', 'time', 'datetime'],
-            obj: datetime
-        ) -> str:
+        def convert(mode: Literal["date", "time", "datetime"], obj: datetime) -> str:
             """Converts a datetime object to a valid LINE datetime string.
 
             Args:
@@ -283,19 +258,12 @@ class Action:
         Args:
             label (str): Label for the action. Max character limit: 20
         """
-        __slots__ = (
-            'json',
-        )
+
+        __slots__ = ("json",)
         json: dict[str, str]
 
-        def __init__(
-            self,
-            label: str
-        ):
-            self.json = {
-                "type": "camera",
-                "label": label
-            }
+        def __init__(self, label: str):
+            self.json = {"type": "camera", "label": label}
 
         def to_json(self) -> dict[str, str]:
             return self.json
@@ -309,19 +277,12 @@ class Action:
         Args:
             label (str): Label for the action. Max character limit: 20
         """
-        __slots__ = (
-            'json',
-        )
+
+        __slots__ = ("json",)
         json: dict[str, str]
 
-        def __init__(
-            self,
-            label: str
-        ):
-            self.json = {
-                "type": "cameraRoll",
-                "label": label
-            }
+        def __init__(self, label: str):
+            self.json = {"type": "cameraRoll", "label": label}
 
         def to_json(self) -> dict[str, str]:
             return self.json
@@ -335,19 +296,12 @@ class Action:
         Args:
             label (str): Label for the action. Max character limit: 20
         """
-        __slots__ = (
-            'json',
-        )
+
+        __slots__ = ("json",)
         json: dict[str, str]
 
-        def __init__(
-            self,
-            label: str
-        ):
-            self.json = {
-                "type": "location",
-                "label": label
-            }
+        def __init__(self, label: str):
+            self.json = {"type": "location", "label": label}
 
         def to_json(self) -> dict[str, str]:
             return self.json
@@ -369,22 +323,18 @@ class Action:
                 user's device accessibility feature is enabled.
                 Max character limit: 20
         """
-        __slots__ = (
-            'json',
-        )
+
+        __slots__ = ("json",)
         json: dict[str, Optional[str]]
 
         def __init__(
-            self,
-            rich_menu_alias_id: str,
-            data: str,
-            label: Optional[str] = None
+            self, rich_menu_alias_id: str, data: str, label: Optional[str] = None
         ):
             self.json = {
                 "type": "richmenuswitch",
                 "richMenuAliasId": rich_menu_alias_id,
                 "data": data,
-                "label": label
+                "label": label,
             }
 
         def to_json(self) -> dict[str, Optional[str]]:
