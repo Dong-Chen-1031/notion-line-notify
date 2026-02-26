@@ -19,7 +19,7 @@ scheduler = AsyncIOScheduler()
 
 @client.event
 async def on_ready():
-    logger.log(f"Logged in as {client.user.name}")
+    logger.log(f"Logged in as {client.user.display_name}")
 
 
 @client.command(name="send")
