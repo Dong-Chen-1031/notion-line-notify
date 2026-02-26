@@ -23,12 +23,7 @@ from .user import BotUser, SourceUser, User
 
 @dataclass
 class BaseContext:
-    """Represents a base context.
-
-    Args:
-        data (dict of str: Any): The event data.
-        _client (:obj:`AsyncClient`): Client.
-    """
+    """Represents a base context."""
 
     event_type: str = field(init=False)
 
@@ -112,11 +107,11 @@ class BaseContext:
             raise TypeError("This is not a group chat.")
 
         group = Group(
+            self.client,
+            self.headers,
             await get_group_chat_summary(
                 self.client, self.headers, self.source["groupId"]
             ),
-            self.headers,
-            self.client,
         )
         GROUPS[group.id] = group
         return group

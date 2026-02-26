@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from typing import Any, Optional
 
 import httpx
@@ -8,44 +9,37 @@ from .quick_reply import QuickReplyButton
 from .sender import Sender
 
 
+@dataclass
 class Group:
     """Represents a LINE group.
 
     Args:
-        data (dict[str, str]): The group data.
-        headers (dict): The authorization headers.
         client (httpx.AsyncClient): The HTTP client.
+        headers (dict): The authorization headers.
+        data (dict[str, str]): The group data.
     """
 
-    __slots__ = ("_group_id", "_group_name", "_picture_url", "_headers", "_client")
+    client: httpx.AsyncClient
+    headers: dict[str, str]
+    payload: dict[str, Any]
 
-    def __init__(self, data: dict[str, str], headers: dict, client: httpx.AsyncClient):
-        self._group_id = data["groupId"]
-        self._group_name = data["groupName"]
-        self._picture_url = data["pictureUrl"]
-        self._headers = headers
-        self._client = client
+    id: str = field(init=False)
+    """The group ID."""
 
-    @property
-    def id(self) -> str:
-        """The group ID."""
-        return self._group_id
+    name: str = field(init=False)
+    """The group name."""
 
-    @property
-    def name(self) -> str:
-        """The group name."""
-        return self._group_name
+    picture_url: str = field(init=False)
+    """The group picture (icon) URL."""
 
-    @property
-    def picture_url(self) -> str:
-        """The group picture (icon) URL."""
-        return self._picture_url
+    def __post_init__(self):
+        self.id = self.payload["groupId"]
+        self.name = self.payload["groupName"]
+        self.picture_url = self.payload["pictureUrl"]
 
-    picture = icon = icon_url = picture_url
-
-    async def count(self):
-        """Shows the group count."""
-        resp = await get_group_member_count(self._headers, self.id)
+    async def count(self) -> int:
+        """Shows the group members count."""
+        resp = await get_group_member_count(self.headers, self.id)
         return resp["count"]
 
     async def push_message(
@@ -55,9 +49,7 @@ class Group:
         quick_replies: Optional[list[QuickReplyButton]] = None,
         notification_disabled: bool = False,
     ):
-        """Reply to the message.
-
-        Could only used **once** for each message.
+        """Send a push message to the group.
 
         Args:
             *messages (str | Any): The messages to send.
@@ -68,7 +60,6 @@ class Group:
                 silent or not. If ``True``, user will not receive the push
                 notification for their device.
         """
-        """Sends a push message to the group."""
 
         valid_messages = _to_valid_message_objects(messages)
 
@@ -81,8 +72,8 @@ class Group:
             valid_messages[-1] |= {"sender": sender.to_json()}
 
         await push(
-            self._client,
-            self._headers,
+            self.client,
+            self.headers,
             self.id,
             valid_messages,
             notification_disabled,
