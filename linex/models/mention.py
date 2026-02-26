@@ -72,37 +72,23 @@ class Mention:
         return Mention("user", user={"id": id})
 
     @staticmethod
-    def includes_mention(
-        mentionees: list[dict[str, int | str]], user: BotUser | User | str
+    def includes_mentions(
+        mentionees: list[Mention], user: BotUser | User | str
     ) -> bool:
         """Check whether a user / the bot is being mentioned in a message or not.
 
         Args:
             mentionees (list of dict of str: int | str): The mentionees of the message.
             user (:obj:`BotUser` | :obj:`User` | str): The user to check for. Could be a user ID or object.
-
-        Example:
-            .. code-block :: python
-
-                Mention.includes_mention([
-                    {
-                        "index": 0,
-                        "length": 4,
-                        "type": "user",
-                        "userId": "U49585cd0d5..."
-                    },
-                    user # user object
-                ])
         """
-        mentions = []
-
         for mention in mentionees:
-            if mention["type"] == "all":
+            if mention.type == "all":
                 return True
 
-            mentions.append(mention["userId"])
+            if isinstance(user, str) and mention.user_id == user:
+                return True
 
-        if isinstance(user, str):
-            return user in mentions
-        else:
-            return user.id in mentions
+            if not isinstance(user, str) and mention.user_id == user.id:
+                return True
+
+        return False

@@ -154,7 +154,7 @@ async def test_webhook(
         return resp.json()
 
 
-async def get_file(headers: dict, client: httpx.AsyncClient, message_id: str):
+async def fetch_file(headers: dict, client: httpx.AsyncClient, message_id: str):
     url = f"https://api-data.line.me/v2/bot/message/{message_id}/content"
 
     resp = await client.get(url, headers=headers)

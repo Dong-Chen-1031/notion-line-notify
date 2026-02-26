@@ -52,11 +52,7 @@ class BotUser:
 
 @dataclass(frozen=True)
 class User:
-    """Represents a regular LINE user.
-
-    Args:
-        data (dict of str: str): The data in JSON, or dictionary.
-    """
+    """Represents a regular LINE user."""
 
     id: str
     """Represents the user ID."""
@@ -91,4 +87,24 @@ class User:
             language=data.get("language", "en"),
             picture_url=data.get("pictureUrl"),
             status_message=data.get("statusMessage"),
+        )
+
+
+@dataclass(frozen=True)
+class SourceUser:
+    """Represents a regular LINE user, but with limited data.
+
+    The data usually comes from events.
+    """
+
+    type: Literal["user"]
+
+    id: str
+    """ID of the source user."""
+
+    @staticmethod
+    def from_json(data: dict[str, str]) -> "SourceUser":
+        return SourceUser(
+            type="user",
+            id=data["userId"],
         )
