@@ -14,8 +14,9 @@ from ..cache import GROUPS, USERS
 from ..exceptions import CannotReply
 from ..http import fetch_file, get_group_chat_summary, get_user, reply
 from .emoji import Emoji
-from .group import Group
+from .group import Group, SourceGroup
 from .mention import Mention
+from .multi_person import SourceMultiPerson
 from .quick_reply import QuickReplyButton
 from .sender import Sender
 from .user import BotUser, SourceUser, User
@@ -39,10 +40,12 @@ class BaseContext:
     Could be used to calculate the ping.
     """
 
-    source: dict[str, str] = field(init=False)
+    source: dict[str, str] | None = field(init=False)
     """The message source.
 
     Could be a user, group chat, or multi-person chat.
+
+    This property won't be included in the account link event if linking the account has failed.
     """
 
     reply_token: str | None = field(init=False)
@@ -70,7 +73,7 @@ class BaseContext:
         self.event_id = self.payload["webhookEventId"]
         self.is_redelivery = self.payload["deliveryContext"]["isRedelivery"]
         self.timestamp = self.payload["timestamp"] / 1000
-        self.source = self.payload["source"]
+        self.source = self.payload.get("source")
         self.reply_token = self.payload.get("replyToken")
         self.mode = self.payload["mode"]
 
@@ -89,11 +92,41 @@ class BaseContext:
 
     @property
     def source_type(self) -> Literal["user", "group", "room"]:
-        """Checks the chat (source) type."""
-        return self._source["type"]  # pyright: ignore reportReturnType
+        """Checks the chat (source) type.
 
-    async def user(self) -> User:
+        This property will cause an error if used on failed account link events.
+        """
+        assert self.source is not None
+        return self.source["type"]  # pyright: ignore [reportReturnType]
+
+    def source_as_group(self) -> SourceGroup:
+        """Casts the source as a group chat.
+
+        Raises an error if the source type is not `group`.
+        """
+        assert self.source is not None and self.source_type == "group"
+        return SourceGroup.from_json(self.source)
+
+    def source_as_user(self) -> SourceUser:
+        """Casts the source as a user.
+
+        Raises an error if the source type is not `user`.
+        """
+        assert self.source is not None and self.source_type == "user"
+        return SourceUser.from_json(self.source)
+
+    def source_as_multi_person(self) -> SourceMultiPerson:
+        """Casts the source as a multi-person chat.
+
+        Raises an error if the source type is not `user`.
+        """
+        assert self.source is not None and self.source_type == "room"
+        return SourceMultiPerson.from_json(self.source)
+
+    async def fetch_user(self) -> User:
         """Fetches the author. (coroutine)"""
+        assert self.source is not None
+
         author = User.from_json(
             await get_user(self.client, self.headers, self.source["userId"])
         )
@@ -101,9 +134,11 @@ class BaseContext:
 
         return author
 
-    async def group(self) -> Group:
+    async def fetch_group(self) -> Group:
         """Fetches group information."""
-        if self.source["type"] != "group":
+        assert self.source is not None
+
+        if self.source_type != "group":
             raise TypeError("This is not a group chat.")
 
         group = Group(

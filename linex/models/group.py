@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import httpx
 
@@ -77,4 +77,24 @@ class Group:
             self.id,
             valid_messages,
             notification_disabled,
+        )
+
+
+@dataclass(frozen=True)
+class SourceGroup:
+    """Represents a regular LINE group, but with limited data.
+
+    The data usually comes from events.
+    """
+
+    type: Literal["group"]
+
+    id: str
+    """ID of the source group chat."""
+
+    @staticmethod
+    def from_json(data: dict[str, str]) -> "SourceGroup":
+        return SourceGroup(
+            type="group",
+            id=data["groupId"],
         )

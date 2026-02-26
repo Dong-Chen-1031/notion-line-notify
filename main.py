@@ -24,7 +24,7 @@ async def on_ready():
 
 @client.command(name="send")
 async def send(ctx: TextMessageContext):
-    author = await ctx.user()
+    author = await ctx.fetch_user()
     if author.id != LINE_DEVS_ID:
         return
     await send_message()
@@ -33,12 +33,12 @@ async def send(ctx: TextMessageContext):
 
 @client.event
 async def on_join(ctx: TextMessageContext):
-    op(await ctx.group())
+    op(await ctx.fetch_group())
 
 
 @client.command(name="test")
 async def test(ctx: TextMessageContext):
-    author = await ctx.user()
+    author = await ctx.fetch_user()
     if author.id != LINE_DEVS_ID:
         return
     # await send_message()

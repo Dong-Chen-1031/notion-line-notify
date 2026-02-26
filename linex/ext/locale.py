@@ -69,7 +69,7 @@ class Locale:
         Args:
             target (:obj:`BaseContext`): The target context.
         """
-        author = await target.user()
+        author = await target.fetch_user()
         contents: dict[str, dict[str, Any]] = {}
 
         if os.path.exists(self.metapos):
