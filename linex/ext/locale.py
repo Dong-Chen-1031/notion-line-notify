@@ -8,6 +8,7 @@ from ..models import BaseContext
 
 NO_KWARGS: dict = {}
 
+
 class Locale:
     """Locale strings manager, used for i18n translations.
 
@@ -35,25 +36,21 @@ class Locale:
                     loc("my-locale-string")
                 )
     """
-    __slots__ = (
-        "directory",
-        "sorted_by"
-    )
+
+    __slots__ = ("directory", "sorted_by")
     directory: str
-    sorted_by: Literal['categories', 'locales']
+    sorted_by: Literal["categories", "locales"]
 
     def __init__(
-        self, 
+        self,
         directory: str,
         *,
-        sorted_by: Literal['categories', 'locales'] = "categories"
+        sorted_by: Literal["categories", "locales"] = "categories",
     ):
         if not os.path.exists(directory):
-            raise NotADirectoryError(
-                f"Directory does not exist: {directory!r}"
-            )
+            raise NotADirectoryError(f"Directory does not exist: {directory!r}")
 
-        self.directory = directory.replace("\\", "/") # uwu
+        self.directory = directory.replace("\\", "/")  # uwu
         self.sorted_by = sorted_by
 
     @property
@@ -64,26 +61,21 @@ class Locale:
     @property
     def basedir(self):
         """Get base directory that ends with a slash."""
-        return self.directory + ("" if self.directory.endswith('/') else "/")
+        return self.directory + ("" if self.directory.endswith("/") else "/")
 
-    async def __call__(
-        self,
-        target: BaseContext
-    ) -> loc:
+    async def __call__(self, target: BaseContext) -> loc:
         """Retrieves the desired locale for the user.
 
         Args:
             target (:obj:`BaseContext`): The target context.
         """
-        author = await target.author()
+        author = await target.user()
         contents: dict[str, dict[str, Any]] = {}
 
         if os.path.exists(self.metapos):
             with open(self.metapos, "rb") as f:
                 meta = json.load(f)
-                contents = {
-                    k: {} for k in meta['locales']
-                }
+                contents = {k: {} for k in meta["locales"]}
         else:
             if self.sorted_by == "categories":
                 raise ValueError(
@@ -94,13 +86,11 @@ class Locale:
                 )
 
             for fn in os.listdir(self.directory):
-                if not fn.endswith('.json'):
+                if not fn.endswith(".json"):
                     continue
 
-                contents[
-                    fn[:-len('.json')]
-                ] = {}
-        
+                contents[fn[: -len(".json")]] = {}
+
         if self.sorted_by == "locales":
             for locale in list(contents):
                 with open(self.basedir + locale + ".json", "rb") as f:
@@ -108,24 +98,19 @@ class Locale:
                     contents[locale] |= data
         else:
             for categoryFn in os.listdir(self.directory):
-                if not categoryFn.endswith('.json')\
-                or categoryFn == "_meta.json":
+                if not categoryFn.endswith(".json") or categoryFn == "_meta.json":
                     continue
 
-                category = categoryFn[:-len('.json')]
+                category = categoryFn[: -len(".json")]
                 with open(self.basedir + categoryFn, "rb") as f:
                     for KEY, localeDicts in json.load(f).items():
                         for locale, translation in localeDicts.items():
-                            contents[locale] |= {
-                                f"{category}/{KEY}": translation
-                            }
+                            contents[locale] |= {f"{category}/{KEY}": translation}
 
-        return loc(
-            author.language,
-            contents
-        )
+        return loc(author.language, contents)
 
     locale_for = __call__
+
 
 class loc:
     """Represents a target-locked locale string manager.
@@ -137,27 +122,18 @@ class loc:
         tl (str): Target locale.
         contents (dict of str: dict of str: Any): Contents.
     """
-    __slots__ = (
-        "tl",
-        "contents"
-    )
+
+    __slots__ = ("tl", "contents")
 
     tl: str
     contents: dict[str, dict[str, Any]]
 
-    def __init__(
-        self,
-        target_locale: str,
-        contents: dict[str, dict[str, Any]]
-    ):
+    def __init__(self, target_locale: str, contents: dict[str, dict[str, Any]]):
         self.tl = target_locale
         self.contents = contents
 
     def __call__(
-        self,
-        key: str,
-        kwargs: dict[str, str] = NO_KWARGS,
-        **kwargs_common
+        self, key: str, kwargs: dict[str, str] = NO_KWARGS, **kwargs_common
     ) -> Any:
         """Finds a locale string or data.
 
@@ -187,10 +163,9 @@ class loc:
             else:
                 for target, replacement in _kwargs.items():
                     desired_content = desired_content.replace(
-                        "{" + target + "}",
-                        str(replacement)
+                        "{" + target + "}", str(replacement)
                     )
 
         return desired_content
 
-    _ = __call__ # alias
+    _ = __call__  # alias

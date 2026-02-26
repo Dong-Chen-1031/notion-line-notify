@@ -2,11 +2,10 @@ from typing import Any, Optional
 
 import httpx
 
-from linex.models.quick_reply import QuickReplyButton
-from linex.models.sender import Sender
-
 from ..http import get_group_member_count, push
 from .messages import _to_valid_message_objects
+from .quick_reply import QuickReplyButton
+from .sender import Sender
 
 
 class Group:

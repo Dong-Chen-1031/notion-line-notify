@@ -97,7 +97,7 @@ class BaseContext:
         """Checks the chat (source) type."""
         return self._source["type"]  # pyright: ignore reportReturnType
 
-    async def author(self) -> User:
+    async def user(self) -> User:
         """Fetches the author. (coroutine)"""
         author = User.from_json(
             await get_user(self.client, self.headers, self.source["userId"])
@@ -105,9 +105,6 @@ class BaseContext:
         USERS[author.id] = author
 
         return author
-
-    # alias
-    user = author
 
     async def group(self) -> Group:
         """Fetches group information."""
