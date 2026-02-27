@@ -92,7 +92,7 @@ def create_line_message(tasks: list[Task]) -> Flex:
     for subject, tasks in tasks_by_subject.items():
         tasks_str = "\n".join(
             [
-                f"{str(i + 1) + '. ' if len(tasks_by_subject) == 1 else ''}{smarter_format_date(task.deadline)} {task.name}"
+                f"{str(i + 1) + '. ' if len(tasks) != 1 else ''}{smarter_format_date(task.deadline)} {task.name}"
                 for i, task in enumerate(tasks)
             ]
         )
