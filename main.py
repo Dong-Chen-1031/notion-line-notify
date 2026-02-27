@@ -88,8 +88,8 @@ async def on_text(ctx: TextMessageContext):
         await ctx.reply(
             "有讀狀態訊息的同學都知道，不要私訊我，要私訊請找另一個 Dong。",
             Image(
-                original_content_url=CDN_BASE + "/志仁.png",
-                preview_image_url=CDN_BASE + "/志仁.jpeg",
+                original_content_url=CDN_BASE + "/chih-ren.png",
+                preview_image_url=CDN_BASE + "/chih-ren.jpeg",
             ),
         )
 
