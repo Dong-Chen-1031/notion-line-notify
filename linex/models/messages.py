@@ -320,7 +320,7 @@ class Imagemap(AbstractLineMessage):
                 action if isinstance(action, dict) else action.to_json()
                 for action in actions
             ]
-            if isinstance(actions[0], AbstractLineAction)
+            if len(actions) > 0 and isinstance(actions[0], AbstractLineAction)
             else actions,
         }
 
@@ -414,7 +414,7 @@ class Templates:
                         action if isinstance(action, dict) else action.to_json()
                         for action in actions
                     ]
-                    if isinstance(actions[0], AbstractLineAction)
+                    if len(actions) > 0 and isinstance(actions[0], AbstractLineAction)
                     else actions,
                 },
             }
@@ -453,7 +453,7 @@ class Templates:
                         action if isinstance(action, dict) else action.to_json()
                         for action in actions
                     ]
-                    if isinstance(actions[0], AbstractLineAction)
+                    if len(actions) > 0 and isinstance(actions[0], AbstractLineAction)
                     else actions,
                 },
             }
