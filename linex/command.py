@@ -14,14 +14,15 @@ class Command:
         self,
         ctx: TextMessageContext,
     ) -> bool:
-        if not ctx.text.startswith(self.name):
+        if not (ctx.text == self.name or ctx.text.startswith(self.name + " ")):
             return False
 
         if not self.meta["kw"] and not self.meta["regular"]:
             await self.func(ctx)
             return True
 
-        parts: list[str] = ctx.text[len(self.name + " ") :].split(";")
+        raw_args = ctx.text[len(self.name) :].lstrip()
+        parts: list[str] = raw_args.split(";")
         args = []
         args.append(ctx)
         kwargs = {}
