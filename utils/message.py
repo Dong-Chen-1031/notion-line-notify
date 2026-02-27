@@ -28,19 +28,19 @@ def smarter_format_date(date: datetime) -> str:
             return date.strftime("%m/%d") + f" ({weekday_to_chinese[date.weekday()]})"
 
 
-def create_line_message(tasks: list[Task]) -> Flex:
+def create_line_message(subject_tasks: list[Task]) -> Flex:
     now = datetime.now(ZoneInfo("Asia/Taipei"))
     date = f"{now.month}/{now.day} ({weekday_to_chinese[now.weekday()]})"
     tasks_by_subject: dict[str, list[Task]] = {}
-    for task in tasks:
+    for task in subject_tasks:
         tasks_by_subject.setdefault(task.subject, []).append(task)
 
     tasks_str_by_subject: dict[str, list[str]] = {}
 
-    for subject, tasks in tasks_by_subject.items():
+    for subject, subject_tasks in tasks_by_subject.items():
         tasks_str = [
-            f"{str(i + 1) + '. ' if len(tasks) != 1 else ''}{smarter_format_date(task.deadline)} {task.name}"
-            for i, task in enumerate(tasks)
+            f"{str(i + 1) + '. ' if len(subject_tasks) != 1 else ''}{smarter_format_date(task.deadline)} {task.name}"
+            for i, task in enumerate(subject_tasks)
         ]
 
         tasks_str_by_subject[subject] = tasks_str
@@ -135,7 +135,7 @@ def create_line_message(tasks: list[Task]) -> Flex:
             },
             "styles": {"header": {"separator": False}},
         },
-        alt_text=create_alt_text(tasks),
+        alt_text=create_alt_text(subject_tasks),
     )
     return message
 
