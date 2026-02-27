@@ -85,7 +85,13 @@ async def on_text(ctx: TextMessageContext):
         return
     if ctx.source_type == "user":
         await ctx.mark_as_read()
-        await ctx.reply("有讀狀態訊息的同學都知道，不要私訊我，要私訊請找另一個 Dong。")
+        await ctx.reply(
+            "有讀狀態訊息的同學都知道，不要私訊我，要私訊請找另一個 Dong。",
+            Image(
+                original_content_url=CDN_BASE + "/志仁.png",
+                preview_image_url=CDN_BASE + "/志仁.jpeg",
+            ),
+        )
 
 
 async def send_message():
