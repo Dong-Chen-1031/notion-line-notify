@@ -608,7 +608,7 @@ class PostbackContext(RepliableContext):
     def __post_init__(self):
         super().__post_init__()
         self.data = self.payload["postback"]["data"]
-        self.params = self.payload["postback"]["params"]
+        self.params = self.payload["postback"].get("params", {})
 
     @property
     def datetime(self) -> str | None:
