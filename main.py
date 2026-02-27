@@ -177,13 +177,18 @@ async def send_message():
     )
 
 
+async def scheduled_send_message():
+    if datetime.now(ZoneInfo("Asia/Taipei")).weekday() == 5:
+        return
+    await send_message()
+
+
 scheduler.add_job(
-    send_message,
+    scheduled_send_message,
     "cron",
     hour=17,
     minute=00,
     timezone=ZoneInfo("Asia/Taipei"),
-    day_of_week="0-4,6",
 )
 
 
