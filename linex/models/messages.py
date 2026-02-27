@@ -318,7 +318,10 @@ class Imagemap(AbstractLineMessage):
             "altText": alt_text,
             "baseSize": base_size,
             "video": video,
-            "actions": [action.to_json() for action in actions]
+            "actions": [
+                action if isinstance(action, dict) else action.to_json()
+                for action in actions
+            ]
             if isinstance(actions[0], AbstractLineAction)
             else actions,
         }
@@ -410,8 +413,8 @@ class Templates:
                     if isinstance(default_action, AbstractLineAction)
                     else default_action,
                     "actions": [
-                        action.to_json()
-                        for action in actions  # type: ignore
+                        action if isinstance(action, dict) else action.to_json()
+                        for action in actions
                     ]
                     if isinstance(actions[0], AbstractLineAction)
                     else actions,
@@ -448,7 +451,10 @@ class Templates:
                 "template": {
                     "type": "confirm",
                     "text": text,
-                    "actions": [action.to_json() for action in actions]
+                    "actions": [
+                        action if isinstance(action, dict) else action.to_json()
+                        for action in actions
+                    ]
                     if isinstance(actions[0], AbstractLineAction)
                     else actions,
                 },
@@ -517,7 +523,7 @@ class Flex(AbstractLineMessage):
         return self.json
 
 
-def _to_valid_message_objects(
+def to_valid_message_objects(
     messages: tuple[AbstractLineMessage | dict | str] | Any,
 ) -> list[dict]:
     """Converts the user-defined message objects to the valid ones.

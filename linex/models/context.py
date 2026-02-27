@@ -22,7 +22,7 @@ from ..http import (
 from .emoji import Emoji
 from .group import Group, SourceGroup
 from .mention import Mention
-from .messages import _to_valid_message_objects
+from .messages import to_valid_message_objects
 from .multi_person import SourceMultiPerson
 from .quick_reply import QuickReplyButton
 from .sender import Sender
@@ -72,7 +72,6 @@ class BaseContext:
     """
 
     client: httpx.AsyncClient
-    headers: dict[str, str]
     payload: dict[str, Any]
 
     def __post_init__(self):
@@ -134,9 +133,7 @@ class BaseContext:
         """Fetches the author. (coroutine)"""
         assert self.source is not None
 
-        author = User.from_json(
-            await fetch_user(self.client, self.headers, self.source["userId"])
-        )
+        author = User.from_json(await fetch_user(self.client, self.source["userId"]))
         USERS[author.id] = author
 
         return author
@@ -150,10 +147,7 @@ class BaseContext:
 
         group = Group(
             self.client,
-            self.headers,
-            await fetch_group_chat_summary(
-                self.client, self.headers, self.source["groupId"]
-            ),
+            await fetch_group_chat_summary(self.client, self.source["groupId"]),
         )
         GROUPS[group.id] = group
         return group
@@ -182,9 +176,7 @@ class BaseContext:
                 "specified duration does not match requirement; see docs"
             )
 
-        await display_loading(
-            self.client, self.headers, self.source_as_user().id, seconds
-        )
+        await display_loading(self.client, self.source_as_user().id, seconds)
 
     defer = display_loading
 
@@ -228,7 +220,7 @@ class RepliableContext(BaseContext):
         if self.replied:
             raise CannotReply("This interaction has already been replied.")
 
-        valid_messages = _to_valid_message_objects(messages)
+        valid_messages = to_valid_message_objects(messages)
 
         if quick_replies:
             valid_messages[-1] |= {
@@ -241,7 +233,6 @@ class RepliableContext(BaseContext):
         self.replied = True
         await reply(
             self.client,
-            self.headers,
             self.reply_token,
             valid_messages,
             notification_disabled,
@@ -271,7 +262,6 @@ class MessageContext(RepliableContext):
         """Marks this message as read."""
         await mark_as_read(
             self.client,
-            self.headers,
             self.mark_as_read_token,
         )
 
@@ -366,7 +356,7 @@ class MediaMessageContext(MessageContext):
             str: The filename or path. If provided an IO as `file`, returns a blank string.
         """
         if self.content_provider["type"] == "line":
-            resp = await fetch_file(self.headers, self.client, self.id)
+            resp = await fetch_file(self.client, self.id)
 
         else:
             resp = await self.client.get(self.content_provider["originalContentUrl"])

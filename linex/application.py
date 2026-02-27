@@ -9,6 +9,7 @@ import os
 import socket
 import uuid
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from inspect import iscoroutinefunction as is_coro
 from typing import Any, Callable, Literal, Optional
 
@@ -22,8 +23,8 @@ from .exceptions import Unknown
 from .http import (
     fetch_group_chat_summary,
     fetch_user,
+    fetch_webhook,
     get_bot_info,
-    get_webhook,
     push,
     set_webhook_endpoint,
     test_webhook,
@@ -31,7 +32,7 @@ from .http import (
 from .log import logger
 from .models import BotUser, Group, PostbackContext, TextMessageContext, User
 from .models.group import SourceGroup
-from .models.messages import _to_valid_message_objects
+from .models.messages import to_valid_message_objects
 from .models.quick_reply import QuickReplyButton
 from .models.sender import Sender
 from .models.user import SourceUser
@@ -45,9 +46,11 @@ class Client:
     Args:
         channel_secret (:obj:`str`, optional): The channel secret, used to identify
             whether a request is sent by LINE or not. If not given, reads an
-            environment variable named ``LINEX_CHANNEL_SECRET`` instead.
+            environment variable named ``LINE_CHANNEL_SECRET`` instead.
         channel_access_token (:obj:`str`, optional): The channel access token, used for
             almost every single client-request. DO NOT LEAK IT.
+            If not given, reads an environment variable named ``LINE_CHANNEL_ACCESS_TOKEN``
+            instead.
         dev (:obj:`bool`, optional): Whether to enable dev mode or not. It's especially
             useful when you're writing an extension for Linex.
         ignore_standby (bool, optional): Whether to ignore the ``standby`` status.
@@ -122,10 +125,11 @@ class Client:
         ignore_standby: bool = True,
         disable_logs: bool = False,
     ) -> None:
-        self.channel_secret = channel_secret or os.environ["LINEX_CHANNEL_SECRET"]
+        self.channel_secret = channel_secret or os.environ["LINE_CHANNEL_SECRET"]
         self.channel_access_token = (
-            channel_access_token or os.environ["LINEX_CHANNEL_ACCESS_TOKEN"]
+            channel_access_token or os.environ["LINE_CHANNEL_ACCESS_TOKEN"]
         )
+        self.headers = {"Authorization": f"Bearer {self.channel_access_token}"}
 
         self.is_ready = False
         self.ignore_standby = ignore_standby
@@ -133,7 +137,7 @@ class Client:
         if disable_logs:
             logger.disabled = True
 
-        self.client = client = httpx.AsyncClient()
+        self.client = client = httpx.AsyncClient(headers=self.headers)
         self.app = app = FastAPI(lifespan=self.lifespan)
         self._commands = []
 
@@ -179,7 +183,7 @@ class Client:
                 logger.print(payload)
 
             try:
-                await process(self, client, self.headers, payload)
+                await process(self, client, payload)
             except Exception as err:
                 raise err
             return {"message": "happy birthday"}
@@ -265,8 +269,7 @@ class Client:
         Args:
             **kwargs: Arguments for ``uvicorn.run``.
         """
-        self.headers = {"Authorization": f"Bearer {self.channel_access_token}"}
-        self.webhook = ApplicationWebhook(self.headers)
+        self.webhook = ApplicationWebhook(self.client)
         self.start_kwargs = {
             "app": self.app,
             "host": "0.0.0.0",
@@ -301,7 +304,7 @@ class Client:
             )
         logger.print()
 
-        self.user = BotUser.from_json(await get_bot_info(self.headers))
+        self.user = BotUser.from_json(await get_bot_info(self.client))
         USERS[self.user.id] = self.user
 
         self.is_ready = True
@@ -524,7 +527,7 @@ class Client:
         else:
             raise TypeError("Argument 'to' must be of type str, Group, or User.")
 
-        valid_messages = _to_valid_message_objects(messages)
+        valid_messages = to_valid_message_objects(messages)
 
         if quick_replies:
             valid_messages[-1] |= {
@@ -536,7 +539,6 @@ class Client:
 
         await push(
             self.client,
-            self.headers,
             to_id,
             valid_messages,
             notification_disabled,
@@ -614,9 +616,7 @@ class Client:
     async def fetch_user(self, suser: str | SourceUser) -> User:
         """Fetches the author."""
         user = User.from_json(
-            await fetch_user(
-                self.client, self.headers, suser if isinstance(suser, str) else suser.id
-            )
+            await fetch_user(self.client, suser if isinstance(suser, str) else suser.id)
         )
         USERS[user.id] = user
 
@@ -626,10 +626,8 @@ class Client:
         """Fetches group information."""
         group = Group(
             self.client,
-            self.headers,
             await fetch_group_chat_summary(
                 self.client,
-                self.headers,
                 sgroup if isinstance(sgroup, str) else sgroup.id,
             ),
         )
@@ -637,20 +635,9 @@ class Client:
         return group
 
 
+@dataclass(frozen=True)
 class ApplicationWebhook:
-    """Represents an application webhook object.
-
-    Contains methods.
-
-    Args:
-        headers: The authorization headers.
-    """
-
-    __slots__ = ("headers",)
-    headers: dict[str, str]
-
-    def __init__(self, headers: dict[str, str]):
-        self.headers = headers
+    client: httpx.AsyncClient
 
     async def set_endpoint(self, endpoint: str) -> None:
         """Sets the webhook endpoint URL.
@@ -664,7 +651,7 @@ class ApplicationWebhook:
         Args:
             endpoint (str): The endpoint. Must be a valid HTTPS URL.
         """
-        await set_webhook_endpoint(self.headers, endpoint)
+        await set_webhook_endpoint(self.client, endpoint)
 
     async def get_info(self) -> tuple[str, bool]:
         """Gets information on a webhook endpoint.
@@ -675,9 +662,9 @@ class ApplicationWebhook:
             tuple[str, bool]: A tuple represents (``url``, ``active?``). ``active?``
                 represents whether it's active (verified) or not.
         """
-        resp: dict[str, str | bool] = await get_webhook(self.headers)
-        endpoint: str = resp["endpoint"]  # type: ignore
-        active: bool = resp["active"]  # type: ignore
+        resp: dict[str, Any] = await fetch_webhook(self.client)
+        endpoint: str = resp["endpoint"]
+        active: bool = resp["active"]
 
         return endpoint, active
 
@@ -712,7 +699,7 @@ class ApplicationWebhook:
                 #     "detail": "TLS handshake failure: https://example.com"
                 # }
         """
-        resp: dict = await test_webhook(self.headers, endpoint)
+        resp: dict = await test_webhook(self.client, endpoint)
 
         return {
             "success": resp["success"],

@@ -62,7 +62,6 @@ OTHER_CONTEXTS: dict[str, type[BaseContext]] = {
 async def process(
     cls: Any,
     client: httpx.AsyncClient,
-    headers: dict[str, str],
     payload: dict,
 ) -> None:
     """Process the webhook event payload.
@@ -70,7 +69,6 @@ async def process(
     Args:
         cls (:obj:`Client`): A constructed (intiailized) client class.
         client (:obj:`httpx.AsyncClient`): The httpx async client.
-        headers (dict of str: str): The headers.
         payload (dict): The webhook event payload sent from LINE.
     """
     events: list[dict] = payload["events"]
@@ -98,14 +96,14 @@ async def process(
 
         if event["type"] == "message":
             name = event["message"]["type"]
-            context = MESSAGE_CONTEXTS[name](client, headers, event)
+            context = MESSAGE_CONTEXTS[name](client, event)
             add_to_message_cache(context)
 
         else:
             ctx = OTHER_CONTEXTS.get(event["type"])
             if ctx is not None:
                 name = event["type"]
-                context = OTHER_CONTEXTS[event["type"]](client, headers, event)
+                context = OTHER_CONTEXTS[event["type"]](client, event)
             else:
                 raise NameError(f"unknown event type: {event['type']}")
 

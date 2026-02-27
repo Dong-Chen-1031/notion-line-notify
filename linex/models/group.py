@@ -3,8 +3,8 @@ from typing import Any, Literal, Optional
 
 import httpx
 
-from ..http import get_group_member_count, push
-from .messages import _to_valid_message_objects
+from ..http import fetch_group_member_count, push
+from .messages import to_valid_message_objects
 from .quick_reply import QuickReplyButton
 from .sender import Sender
 
@@ -15,12 +15,10 @@ class Group:
 
     Args:
         client (httpx.AsyncClient): The HTTP client.
-        headers (dict): The authorization headers.
         data (dict[str, str]): The group data.
     """
 
     client: httpx.AsyncClient
-    headers: dict[str, str]
     payload: dict[str, Any]
 
     id: str = field(init=False)
@@ -39,7 +37,7 @@ class Group:
 
     async def count(self) -> int:
         """Shows the group members count."""
-        resp = await get_group_member_count(self.headers, self.id)
+        resp = await fetch_group_member_count(self.client, self.id)
         return resp["count"]
 
     async def push_message(
@@ -61,7 +59,7 @@ class Group:
                 notification for their device.
         """
 
-        valid_messages = _to_valid_message_objects(messages)
+        valid_messages = to_valid_message_objects(messages)
 
         if quick_replies:
             valid_messages[-1] |= {
@@ -73,7 +71,6 @@ class Group:
 
         await push(
             self.client,
-            self.headers,
             self.id,
             valid_messages,
             notification_disabled,

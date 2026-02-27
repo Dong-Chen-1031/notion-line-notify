@@ -10,46 +10,39 @@ API_ENDPOINT = "https://api.line.me/v2"
 DATA_ENDPOINT = "https://api-data.line.me/v2"
 
 
-async def get_bot_info(headers: dict) -> dict:
+async def get_bot_info(client: httpx.AsyncClient) -> dict:
     await rr_botInfo.call()
-
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(API_ENDPOINT + "/bot/info", headers=headers)
-        return resp.json()
+    resp = await client.get(API_ENDPOINT + "/bot/info")
+    return resp.json()
 
 
 rr_getMemberCount = RateLimit.other()
 
 
-async def get_group_member_count(headers: dict, group_id: str) -> dict:
+async def fetch_group_member_count(client: httpx.AsyncClient, group_id: str) -> dict:
     await rr_getMemberCount.call()
 
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            API_ENDPOINT + f"/bot/group/{group_id}/members/count",
-            headers=headers,
-        )
-        return resp.json()
+    resp = await client.get(
+        API_ENDPOINT + f"/bot/group/{group_id}/members/count",
+    )
+    return resp.json()
 
 
 rr_getGroupChat = RateLimit.other()
 
 
 async def fetch_group_chat_summary(
-    client: httpx.AsyncClient, headers: dict, group_id: str
+    client: httpx.AsyncClient, group_id: str
 ) -> dict[str, str]:
     await rr_getGroupChat.call()
 
-    resp = await client.get(
-        API_ENDPOINT + f"/bot/group/{group_id}/summary", headers=headers
-    )
+    resp = await client.get(API_ENDPOINT + f"/bot/group/{group_id}/summary")
 
     return resp.json()
 
 
 async def reply(
     client: httpx.AsyncClient,
-    headers: dict,
     reply_token: str,
     messages: list[dict[str, Any]],
     notificationDisabled: bool,
@@ -57,7 +50,6 @@ async def reply(
     # op(messages)
     resp = await client.post(
         API_ENDPOINT + "/bot/message/reply",
-        headers=headers,
         json={
             "replyToken": reply_token,
             "messages": messages,
@@ -67,10 +59,9 @@ async def reply(
     return resp.json()
 
 
-async def mark_as_read(client: httpx.AsyncClient, headers: dict, mar_token: str):
+async def mark_as_read(client: httpx.AsyncClient, mar_token: str):
     resp = await client.post(
         API_ENDPOINT + "/bot/chat/markAsRead",
-        headers=headers,
         json={
             "markAsReadToken": mar_token,
         },
@@ -79,11 +70,10 @@ async def mark_as_read(client: httpx.AsyncClient, headers: dict, mar_token: str)
 
 
 async def display_loading(
-    client: httpx.AsyncClient, headers: dict, chat_id: str, seconds: int | None
+    client: httpx.AsyncClient, chat_id: str, seconds: int | None
 ) -> dict:
     resp = await client.post(
         API_ENDPOINT + "/bot/message/reply",
-        headers=headers,
         json={"chatId": chat_id, "loadingSeconds": seconds},
     )
     return resp.json()
@@ -91,7 +81,6 @@ async def display_loading(
 
 async def push(
     client: httpx.AsyncClient,
-    headers: dict,
     to: str,
     messages: list[dict[str, Any]],
     notificationDisabled: bool,
@@ -99,7 +88,6 @@ async def push(
     # op(messages)
     resp = await client.post(
         API_ENDPOINT + "/bot/message/push",
-        headers=headers,
         json={
             "to": to,
             "messages": messages,
@@ -112,12 +100,10 @@ async def push(
 rr_getUser = RateLimit.other()
 
 
-async def fetch_user(
-    client: httpx.AsyncClient, headers: dict, user_id: str
-) -> dict[str, str]:
+async def fetch_user(client: httpx.AsyncClient, user_id: str) -> dict[str, str]:
     await rr_getUser.call()
 
-    resp = await client.get(API_ENDPOINT + f"/bot/profile/{user_id}", headers=headers)
+    resp = await client.get(API_ENDPOINT + f"/bot/profile/{user_id}")
     return resp.json()
 
 
@@ -133,54 +119,47 @@ async def fetch_location(location: str) -> list[dict]:
 rr_setWebhookEndpoint = RateLimit.webhook_endpoint()
 
 
-async def set_webhook_endpoint(headers: dict, endpoint: str) -> dict:
+async def set_webhook_endpoint(client: httpx.AsyncClient, endpoint: str) -> dict:
     await rr_setWebhookEndpoint.call()
 
-    async with httpx.AsyncClient() as client:
-        resp = await client.put(
-            API_ENDPOINT + "/bot/channel/webhook/endpoint",
-            headers=headers,
-            json={"endpoint": endpoint},
-        )
-        return resp.json()
+    resp = await client.put(
+        API_ENDPOINT + "/bot/channel/webhook/endpoint",
+        json={"endpoint": endpoint},
+    )
+    return resp.json()
 
 
 rr_getWebhook = RateLimit.webhook_endpoint()
 
 
-async def get_webhook(headers: dict) -> dict[str, str | bool]:
+async def fetch_webhook(client: httpx.AsyncClient) -> dict[str, str | bool]:
     await rr_getWebhook.call()
 
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            API_ENDPOINT + "/bot/channel/webhook/endpoint", headers=headers
-        )
-        return resp.json()
+    resp = await client.get(API_ENDPOINT + "/bot/channel/webhook/endpoint")
+    return resp.json()
 
 
 rr_testWebhook = RateLimit.stats_and_broadcast()
 
 
 async def test_webhook(
-    headers: dict, endpoint: Optional[str] = None
+    client: httpx.AsyncClient, endpoint: Optional[str] = None
 ) -> dict[str, bool | str]:
     await rr_testWebhook.call()
 
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            API_ENDPOINT + "/bot/channel/webhook/test",
-            headers=headers,
-            json={
-                "endpoint": endpoint,
-            },
-        )
-        return resp.json()
+    resp = await client.post(
+        API_ENDPOINT + "/bot/channel/webhook/test",
+        json={
+            "endpoint": endpoint,
+        },
+    )
+    return resp.json()
 
 
-async def fetch_file(headers: dict, client: httpx.AsyncClient, message_id: str):
+async def fetch_file(client: httpx.AsyncClient, message_id: str):
     url = DATA_ENDPOINT + f"/bot/message/{message_id}/content"
 
-    resp = await client.get(url, headers=headers)
+    resp = await client.get(url)
 
     if resp.status_code == 404:
         raise TypeError("(404) Unknown message ID.")
