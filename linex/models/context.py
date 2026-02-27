@@ -9,13 +9,13 @@ from typing import IO, Any, Literal, Optional
 
 import httpx
 
-from ..abc import AbstractLineMessage
 from ..cache import GROUPS, USERS
 from ..exceptions import CannotReply
 from ..http import fetch_file, get_group_chat_summary, get_user, reply
 from .emoji import Emoji
 from .group import Group, SourceGroup
 from .mention import Mention
+from .messages import _to_valid_message_objects
 from .multi_person import SourceMultiPerson
 from .quick_reply import QuickReplyButton
 from .sender import Sender
@@ -159,38 +159,6 @@ class RepliableContext(BaseContext):
     replied: bool = False
     """Whether the message has been replied."""
 
-    def _to_valid_message_objects(
-        self, messages: tuple[AbstractLineMessage | dict | str, ...]
-    ) -> list[dict]:
-        """Converts the user-defined message objects to the valid ones.
-
-        Args:
-            messages (tuple of :obj:`AbstractLineMessage`): The messages.
-
-        Returns:
-            list of dict: List of valid dictionaries / JSON objects.
-        """
-        if (time.time() - self.timestamp) > 60 * 20:
-            # 20mins had passed
-            raise CannotReply("Cannnot reply to this message: 20mins had passed.")
-
-        """Converts given messages to valid message objects."""
-        collected = []
-
-        for message in messages:
-            if isinstance(message, str):
-                text, emojis = Emoji.emoji_text_to_emojis(message)
-                msg = {"type": "text", "text": text, "emojis": emojis or None}
-                collected.append(msg)
-
-            elif isinstance(message, dict):
-                collected.append(message)
-
-            else:
-                collected.append(message.to_json())
-
-        return collected
-
     async def reply(
         self,
         *messages: str | Any,
@@ -223,7 +191,7 @@ class RepliableContext(BaseContext):
         if self.replied:
             raise CannotReply("This interaction has already been replied.")
 
-        valid_messages = self._to_valid_message_objects(messages)
+        valid_messages = _to_valid_message_objects(messages)
 
         if quick_replies:
             valid_messages[-1] |= {
