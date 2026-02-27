@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from api.notion import Task
@@ -19,10 +19,12 @@ def smarter_format_date(date: datetime) -> str:
     elif timedelta_.days == 2:
         return "後天"
     else:
-        week_delta = now.isocalendar().week - date.isocalendar().week
+        start_of_this_week = now.date() - timedelta(days=now.weekday())
+        start_of_target_week = date.date() - timedelta(days=date.weekday())
+        week_delta = (start_of_target_week - start_of_this_week).days // 7
         if week_delta == 0:
             return f"本週{weekday_to_chinese[date.weekday()]}"
-        elif week_delta == -1:
+        elif week_delta == 1:
             return f"下週{weekday_to_chinese[date.weekday()]}"
         else:
             return date.strftime("%m/%d") + f" ({weekday_to_chinese[date.weekday()]})"

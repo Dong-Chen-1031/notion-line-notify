@@ -56,27 +56,12 @@ async def test(ctx: TextMessageContext):
     # if author.id not in LINE_DEVS_ID:
     #     return
     author = await ctx.fetch_user()
-    logger.log(author)
     if author.id not in LINE_DEVS_ID:
-        logger.log("not dev")
         return
 
     # await ctx.mark_as_read()
-    logger.log("fetching tasks")
     tasks = await get_upcoming_tasks()
-    logger.log("fetched tasks")
     await ctx.reply(create_line_message(tasks))
-    logger.log("sent")
-
-
-@client.command(name="info")
-async def info(ctx: TextMessageContext):
-    author = ctx.source_as_group()
-    # if author.id not in LINE_DEVS_ID:
-    #     return
-
-    await ctx.mark_as_read()
-    await ctx.reply(f"群組 ID: {author.id}")
 
 
 @client.event
