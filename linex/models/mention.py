@@ -17,7 +17,7 @@ class Mention:
 
     __slots__ = ("type", "user_id")
     type: Literal["all", "user"]
-    user_id: Optional[str]
+    user_id: str | None
 
     def __init__(
         self,
@@ -32,6 +32,7 @@ class Mention:
             raise TypeError("Keyword-only argument `user` was not given.")
 
         self.type = type
+        self.user_id = None
         if type == "user" and user:
             # pass type check
             if isinstance(user, dict):
