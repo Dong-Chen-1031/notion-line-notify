@@ -44,6 +44,7 @@ def create_line_message(tasks: list[Task]) -> Flex:
         ]
 
         tasks_str_by_subject[subject] = tasks_str
+
     all_homework = []
     for subject, tasks_str in tasks_str_by_subject.items():
         for i, text in enumerate(tasks_str):
@@ -133,12 +134,16 @@ def create_line_message(tasks: list[Task]) -> Flex:
             },
             "styles": {"header": {"separator": False}},
         },
-        alt_text=f"{date} 的作業\n"
-        + "\n".join(
-            [
-                f"{subject}:\n{'\n'.join(tasks_str)}"
-                for subject, tasks_str in tasks_str_by_subject.items()
-            ]
-        ),
+        alt_text=create_alt_text(tasks),
     )
     return message
+
+
+def create_alt_text(tasks: list[Task]) -> str:
+    if len(tasks) == 0:
+        return "今天沒有任何事做，可以內卷了！"
+
+    task = tasks[0]
+    return f"{task.subject}：「{task.name}」" + (
+        f"，還有其他 {len(tasks) - 1} 項" if len(tasks) > 1 else ""
+    )
