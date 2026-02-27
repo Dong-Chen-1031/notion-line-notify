@@ -143,6 +143,7 @@ class Client:
         self.client = client = httpx.AsyncClient(headers=self.headers)
         self.app = app = FastAPI(lifespan=self.lifespan)
         self._commands = {}
+        self.start_kwargs = {}
 
         # @app.exception_handler(Exception)
         # async def handle_them_all(*_):
@@ -310,6 +311,7 @@ class Client:
             "log_level": logging.WARNING,
             **kwargs,
         }
+        print(self.start_kwargs)
         uvicorn.run(**self.start_kwargs)
 
     @asynccontextmanager

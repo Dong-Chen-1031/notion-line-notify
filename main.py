@@ -6,7 +6,15 @@ from objprint import op
 
 from api.notion import get_upcoming_tasks
 from linex import Client, Image, JoinContext, TextMessageContext, logger
-from settings import CDN_BASE, CHANNEL_SECRET, GROUP_ID, LINE_DEVS_ID, LINE_TOKEN, PORT
+from settings import (
+    CDN_BASE,
+    CHANNEL_SECRET,
+    DEV_MODE,
+    GROUP_ID,
+    LINE_DEVS_ID,
+    LINE_TOKEN,
+    PORT,
+)
 from utils.message import create_line_message
 
 client = Client(CHANNEL_SECRET, LINE_TOKEN)
@@ -104,4 +112,7 @@ scheduler.add_job(
 )
 
 
-client.run(port=PORT)
+if DEV_MODE:
+    app = client.app
+else:
+    client.run(port=PORT)
