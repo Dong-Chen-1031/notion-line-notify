@@ -145,14 +145,6 @@ class Client:
         self._commands = {}
         self.start_kwargs = {}
 
-        # @app.exception_handler(Exception)
-        # async def handle_them_all(*_):
-        #     logger.print_exception()
-        #     return JSONResponse(
-        #         status_code=500,
-        #         content={"message": "oops"},
-        #     )
-
         @app.get("/")
         async def get_index():
             return "linex is happy"
