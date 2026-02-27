@@ -165,7 +165,7 @@ class Client:
             if dev:
                 logger.print(payload)
 
-            await process(self, payload, client, self.headers)
+            await process(self, client, self.headers, payload)
             return {"message": "happy birthday"}
 
     def event(self, handler: Callable[..., Any]) -> None:

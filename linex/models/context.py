@@ -501,7 +501,7 @@ class StickerMessageContext(MessageContext):
 
 @dataclass
 class UnsendContext(BaseContext):
-    message_id: str
+    message_id: str = field(init=False)
     """The unsent message ID."""
 
     def __post_init__(self):
