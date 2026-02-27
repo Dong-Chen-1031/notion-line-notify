@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 from inspect import iscoroutinefunction as is_coro
 from typing import Any, Callable, Literal, Optional
 
+import httpx
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -20,7 +21,7 @@ from linex.models.messages import _to_valid_message_objects
 from linex.models.quick_reply import QuickReplyButton
 from linex.models.sender import Sender
 
-from .cache import GROUPS, HTTP_CLIENT, MESSAGES, USERS
+from .cache import GROUPS, MESSAGES, USERS
 from .exceptions import Unknown
 from .http import get_bot_info, get_webhook, push, set_webhook_endpoint, test_webhook
 from .log import logger
@@ -57,6 +58,7 @@ class Client:
         "channel_secret",
         "channel_access_token",
         "app",
+        "client",
         "user",
         "headers",
         "is_ready",
@@ -67,6 +69,7 @@ class Client:
     )
 
     app: FastAPI
+    client: httpx.AsyncClient
     channel_secret: str
     channel_access_token: str
     handlers: dict[str, list[Callable[..., Any]]] = {
@@ -121,6 +124,7 @@ class Client:
         if disable_logs:
             logger.disabled = True
 
+        self.client = client = httpx.AsyncClient()
         self.app = app = FastAPI(lifespan=self.lifespan)
         self._commands = []
 
@@ -161,7 +165,7 @@ class Client:
             if dev:
                 logger.print(payload)
 
-            await process(self, payload, HTTP_CLIENT, self.headers)
+            await process(self, payload, client, self.headers)
             return {"message": "happy birthday"}
 
     def event(self, handler: Callable[..., Any]) -> None:
@@ -516,7 +520,7 @@ class Client:
             valid_messages[-1] |= {"sender": sender.to_json()}
 
         await push(
-            HTTP_CLIENT,
+            self.client,
             self.headers,
             to_id,
             valid_messages,
@@ -551,13 +555,13 @@ class Client:
 
             @self.event
             async def on_text(ctx: TextMessageContext):
-                if not ctx.content.startswith(cmd_name):
+                if not ctx.text.startswith(cmd_name):
                     return
 
                 if not meta["kw"] and not meta["regular"]:
                     return await func(ctx)
 
-                parts: list[str] = ctx.content[len(cmd_name + " ") :].split(";")
+                parts: list[str] = ctx.text[len(cmd_name + " ") :].split(";")
                 args = []
                 args.append(ctx)
                 kwargs = {}
