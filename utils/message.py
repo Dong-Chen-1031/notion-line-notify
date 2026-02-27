@@ -44,6 +44,33 @@ def create_line_message(tasks: list[Task]) -> Flex:
         ]
 
         tasks_str_by_subject[subject] = tasks_str
+    all_homework = []
+    for subject, tasks_str in tasks_str_by_subject.items():
+        for i, text in enumerate(tasks_str):
+            all_homework.append(
+                {
+                    "type": "box",
+                    "layout": "baseline",
+                    "spacing": "sm",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": subject if i == 0 else " ",
+                            "color": "#aaaaaa",
+                            "size": "sm",
+                            "flex": 2,
+                        },
+                        {
+                            "type": "text",
+                            "text": text,
+                            "wrap": True,
+                            "color": "#fc4e42" if "明天" in text else "#666666",
+                            "size": "sm",
+                            "flex": 6,
+                        },
+                    ],
+                }
+            )
 
     message = Flex(
         {
@@ -100,56 +127,7 @@ def create_line_message(tasks: list[Task]) -> Flex:
                         "layout": "vertical",
                         "margin": "lg",
                         "spacing": "sm",
-                        "contents": [
-                            {
-                                "type": "box",
-                                "layout": "baseline",
-                                "spacing": "sm",
-                                "contents": [
-                                    {
-                                        "type": "text",
-                                        "text": subject,
-                                        "color": "#aaaaaa",
-                                        "size": "sm",
-                                        "flex": 2,
-                                    },
-                                    {
-                                        "type": "text",
-                                        "text": tasks_str,
-                                        "wrap": True,
-                                        "color": "#666666",
-                                        "size": "sm",
-                                        "flex": 6,
-                                    },
-                                ],
-                            }
-                            if not i
-                            else {
-                                "type": "box",
-                                "layout": "baseline",
-                                "spacing": "sm",
-                                "contents": [
-                                    {
-                                        "type": "text",
-                                        "text": " ",
-                                        "color": "#aaaaaa",
-                                        "size": "sm",
-                                        "flex": 2,
-                                    },
-                                    {
-                                        "type": "text",
-                                        "text": tasks_str,
-                                        "wrap": True,
-                                        "color": "#666666",
-                                        "size": "sm",
-                                        "flex": 6,
-                                    },
-                                ],
-                            }
-                            for i, (subject, tasks_str) in enumerate(
-                                tasks_str_by_subject.items()
-                            )
-                        ],
+                        "contents": all_homework,
                     },
                 ],
             },
