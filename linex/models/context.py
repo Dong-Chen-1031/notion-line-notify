@@ -362,11 +362,11 @@ class MediaMessageContext(MessageContext):
     ) -> str:
         """Downloads the file.
 
-        In the ``fn``, use ``${random}`` to use a random filename, ``${ext}``
+        In the `file`, use `${random}` to use a random filename, `${ext}`
         for the extension name (the dot is included).
 
         Args:
-            fn (str, optional): The filename or path.
+            file (optional): The filename/path or IO target.
             disable_string_parsing (bool, optional): Whether to disable string parsing.
                 See the note.
 
