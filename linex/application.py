@@ -228,6 +228,8 @@ class Client:
     async def process_commands(self, ctx: TextMessageContext) -> bool:
         """Processes commands.
 
+        Returns whether any command has been executed.
+
         (coroutine)
 
         Args:
