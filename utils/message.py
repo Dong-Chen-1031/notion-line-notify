@@ -35,16 +35,15 @@ def create_line_message(tasks: list[Task]) -> Flex:
     for task in tasks:
         tasks_by_subject.setdefault(task.subject, []).append(task)
 
-    tasks_str_by_subject: dict[str, str] = {}
+    tasks_str_by_subject: dict[str, list[str]] = {}
 
     for subject, tasks in tasks_by_subject.items():
-        tasks_str = "\n".join(
-            [
-                f"{str(i + 1) + '. ' if len(tasks) != 1 else ''}{smarter_format_date(task.deadline)} {task.name}"
-                for i, task in enumerate(tasks)
-            ]
-        )
-        tasks_str_by_subject[subject] = tasks_str.strip()
+        tasks_str = [
+            f"{str(i + 1) + '. ' if len(tasks) != 1 else ''}{smarter_format_date(task.deadline)} {task.name}"
+            for i, task in enumerate(tasks)
+        ]
+
+        tasks_str_by_subject[subject] = tasks_str
 
     message = Flex(
         {
@@ -124,7 +123,32 @@ def create_line_message(tasks: list[Task]) -> Flex:
                                     },
                                 ],
                             }
-                            for subject, tasks_str in tasks_str_by_subject.items()
+                            if not i
+                            else {
+                                "type": "box",
+                                "layout": "baseline",
+                                "spacing": "sm",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": " ",
+                                        "color": "#aaaaaa",
+                                        "size": "sm",
+                                        "flex": 2,
+                                    },
+                                    {
+                                        "type": "text",
+                                        "text": tasks_str,
+                                        "wrap": True,
+                                        "color": "#666666",
+                                        "size": "sm",
+                                        "flex": 6,
+                                    },
+                                ],
+                            }
+                            for i, (subject, tasks_str) in enumerate(
+                                tasks_str_by_subject.items()
+                            )
                         ],
                     },
                 ],

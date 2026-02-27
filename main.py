@@ -36,14 +36,20 @@ async def on_join(ctx: JoinContext):
 
 @client.command(name="test")
 async def test(ctx: TextMessageContext):
-    if ctx.source_type != "user":
-        return await ctx.mark_as_read()
+    # if ctx.source_type != "user":
+    #     return await ctx.mark_as_read()
 
-    author = ctx.source_as_user()
+    # author = ctx.source_as_user()
+    # if author.id not in LINE_DEVS_ID:
+    #     return
+    author = await ctx.fetch_user()
+    print(author)
     if author.id not in LINE_DEVS_ID:
+        print("not dev")
         return
 
-    await ctx.mark_as_read()
+    # await ctx.mark_as_read()
+    print("fetching tasks")
     tasks = await get_upcoming_tasks()
     await ctx.reply(create_line_message(tasks))
 
@@ -81,8 +87,6 @@ async def scheduled_send_message():
         return
     await send_message()
 
-
-# fc4e42
 
 scheduler.add_job(
     scheduled_send_message,
