@@ -166,7 +166,7 @@ async def test_webhook(
         API_ENDPOINT + "/bot/channel/webhook/test",
         json={
             "endpoint": endpoint,
-        },
+        } if endpoint is not None else {},
     )
     return resp.json()
 
