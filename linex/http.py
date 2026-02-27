@@ -57,10 +57,12 @@ async def reply(
             "notificationDisabled": notificationDisabled,
         },
     )
-    if resp.status_code != 200:
+    try:
+        resp.raise_for_status()
+    except httpx.HTTPStatusError as e:
         raise RuntimeError(
             "error while replying:\n" + json.dumps(resp.json(), indent=2)
-        )
+        ) from e
 
     return resp.json()
 
@@ -72,23 +74,27 @@ async def mark_as_read(client: httpx.AsyncClient, mar_token: str):
             "markAsReadToken": mar_token,
         },
     )
-    if resp.status_code != 200:
+    try:
+        resp.raise_for_status()
+    except httpx.HTTPStatusError as e:
         raise RuntimeError(
             "error while marking as read:\n" + json.dumps(resp.json(), indent=2)
-        )
+        ) from e
 
 
 async def display_loading(
     client: httpx.AsyncClient, chat_id: str, seconds: int | None
 ) -> dict:
     resp = await client.post(
-        API_ENDPOINT + "/chat/loading/start",
+        API_ENDPOINT + "/bot/chat/loading/start",
         json={"chatId": chat_id, "loadingSeconds": seconds},
     )
-    if resp.status_code != 200:
+    try:
+        resp.raise_for_status()
+    except httpx.HTTPStatusError as e:
         raise RuntimeError(
             "error while displaying loading:\n" + json.dumps(resp.json(), indent=2)
-        )
+        ) from e
     return resp.json()
 
 
@@ -107,8 +113,12 @@ async def push(
             "notificationDisabled": notificationDisabled,
         },
     )
-    if resp.status_code != 200:
-        raise RuntimeError("error while pushing:\n" + json.dumps(resp.json(), indent=2))
+    try:
+        resp.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise RuntimeError(
+            "error while pushing:\n" + json.dumps(resp.json(), indent=2)
+        ) from e
     return resp.json()
 
 
@@ -119,6 +129,12 @@ async def fetch_user(client: httpx.AsyncClient, user_id: str) -> dict[str, str]:
     await rr_getUser.call()
 
     resp = await client.get(API_ENDPOINT + f"/bot/profile/{user_id}")
+    try:
+        resp.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise RuntimeError(
+            "error while fetching user:\n" + json.dumps(resp.json(), indent=2)
+        ) from e
     return resp.json()
 
 
@@ -166,7 +182,9 @@ async def test_webhook(
         API_ENDPOINT + "/bot/channel/webhook/test",
         json={
             "endpoint": endpoint,
-        } if endpoint is not None else {},
+        }
+        if endpoint is not None
+        else {},
     )
     return resp.json()
 
