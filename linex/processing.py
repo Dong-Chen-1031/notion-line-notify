@@ -2,7 +2,6 @@ from typing import Any
 
 import httpx
 
-from .application import Client
 from .cache import MESSAGES
 from .log import logger
 from .models import (
@@ -61,7 +60,7 @@ OTHER_CONTEXTS: dict[str, type[BaseContext]] = {
 
 
 async def process(
-    cls: Client,
+    cls: Any,
     client: httpx.AsyncClient,
     headers: dict[str, str],
     payload: dict,
