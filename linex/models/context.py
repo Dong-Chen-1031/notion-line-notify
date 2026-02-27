@@ -718,4 +718,4 @@ class AccountLinkContext(RepliableContext):
         super().__post_init__()
         link = self.payload["link"]
         self.result = link["result"]
-        self.nounce = link["nonce"]
+        self.nonce = link["nonce"]
