@@ -101,7 +101,11 @@ async def process(
 
         if event["type"] == "message":
             name = event["message"]["type"]
-            context = MESSAGE_CONTEXTS[name](client, event)
+            ctx = MESSAGE_CONTEXTS.get(name)
+            if ctx is None:
+                logger.warning(f"unknown message type: {name!r} - skipping event")
+                continue
+            context = ctx(client, event)
             add_to_message_cache(context)
 
         else:
