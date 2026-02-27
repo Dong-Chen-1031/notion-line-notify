@@ -5,8 +5,7 @@ from typing import Any
 class Emoji:
     """Represents a LINE emoji.
 
-    .. warning::
-        The default LINE emojis sent from LINE for Android won't be included.
+    The default LINE emojis sent from LINE for Android won't be included.
 
     Args:
         product_id (str): The product ID.
