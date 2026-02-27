@@ -1,0 +1,142 @@
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from api.notion import Task
+from linex.models.messages import Flex
+
+weekday_to_chinese = ["一", "二", "三", "四", "五", "六", "日"]
+
+
+def smarter_format_date(date: datetime) -> str:
+    now = datetime.now(ZoneInfo("Asia/Taipei")).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    timedelta_ = date - now
+    if timedelta_.days == 0:
+        return "今天"
+    elif timedelta_.days == 1:
+        return "明天"
+    elif timedelta_.days == 2:
+        return "後天"
+    else:
+        week_delta = now.isocalendar().week - date.isocalendar().week
+        if week_delta == 0:
+            return f"本週{weekday_to_chinese[date.weekday()]}"
+        elif week_delta == -1:
+            return f"下週{weekday_to_chinese[date.weekday()]}"
+        else:
+            return date.strftime("%m/%d") + f" ({weekday_to_chinese[date.weekday()]})"
+
+
+def create_line_message(tasks: list[Task]) -> Flex:
+    now = datetime.now(ZoneInfo("Asia/Taipei"))
+    date = f"{now.month}/{now.day} ({weekday_to_chinese[now.weekday()]})"
+    tasks_by_subject: dict[str, list[Task]] = {}
+    for task in tasks:
+        tasks_by_subject.setdefault(task.subject, []).append(task)
+
+    tasks_str_by_subject: dict[str, str] = {}
+
+    for subject, tasks in tasks_by_subject.items():
+        tasks_str = "\n".join(
+            [
+                f"{str(i + 1) + '. ' if len(tasks) != 1 else ''}{smarter_format_date(task.deadline)} {task.name}"
+                for i, task in enumerate(tasks)
+            ]
+        )
+        tasks_str_by_subject[subject] = tasks_str.strip()
+
+    message = Flex(
+        {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": f"週{weekday_to_chinese[now.weekday()]}",
+                                        "color": "#fc4e42",
+                                        "align": "center",
+                                        "size": "xs",
+                                        "offsetTop": "4px",
+                                    },
+                                    {
+                                        "type": "text",
+                                        "text": f"{now.day}",
+                                        "align": "center",
+                                        "size": "xxl",
+                                    },
+                                ],
+                                "cornerRadius": "md",
+                                "alignItems": "center",
+                                "backgroundColor": "#f1f1f1",
+                                "justifyContent": "center",
+                                "width": "60px",
+                                "height": "60px",
+                            },
+                            {
+                                "type": "text",
+                                "text": "今日提醒事項",
+                                "weight": "bold",
+                                "size": "xl",
+                            },
+                        ],
+                        "justifyContent": "flex-start",
+                        "alignItems": "center",
+                        "spacing": "20px",
+                        "paddingBottom": "12px",
+                    },
+                    {"type": "separator"},
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "margin": "lg",
+                        "spacing": "sm",
+                        "contents": [
+                            {
+                                "type": "box",
+                                "layout": "baseline",
+                                "spacing": "sm",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": subject,
+                                        "color": "#aaaaaa",
+                                        "size": "sm",
+                                        "flex": 2,
+                                    },
+                                    {
+                                        "type": "text",
+                                        "text": tasks_str,
+                                        "wrap": True,
+                                        "color": "#666666",
+                                        "size": "sm",
+                                        "flex": 6,
+                                    },
+                                ],
+                            }
+                            for subject, tasks_str in tasks_str_by_subject.items()
+                        ],
+                    },
+                ],
+            },
+            "styles": {"header": {"separator": False}},
+        },
+        alt_text=f"{date} 的作業\n"
+        + "\n".join(
+            [
+                f"{subject}:\n{tasks_str}"
+                for subject, tasks_str in tasks_str_by_subject.items()
+            ]
+        ),
+    )
+    return message
