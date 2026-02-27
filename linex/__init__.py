@@ -1,4 +1,3 @@
-from . import ext as ext
 from . import utils as utils
 from .abc import AbstractLineMessage
 from .application import Client
@@ -91,6 +90,5 @@ __all__ = (
     "AccountLinkContext",
     "MessageContext",
     "utils",
-    "ext",
     "MediaMessageContext",
 )
