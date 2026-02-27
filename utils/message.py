@@ -30,7 +30,7 @@ def smarter_format_date(date: datetime) -> str:
 
 def create_line_message(tasks: list[Task]) -> Flex:
     now = datetime.now(ZoneInfo("Asia/Taipei"))
-    date = f"{now.month}/{now.day} ({weekday_to_chinese[now.weekday()]})"
+    # date = f"{now.month}/{now.day} ({weekday_to_chinese[now.weekday()]})"
     tasks_by_subject: dict[str, list[Task]] = {}
     for task in tasks:
         tasks_by_subject.setdefault(task.subject, []).append(task)
