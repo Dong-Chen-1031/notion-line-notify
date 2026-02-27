@@ -1,3 +1,4 @@
+import json
 from typing import Any, Optional
 
 import httpx
@@ -56,6 +57,11 @@ async def reply(
             "notificationDisabled": notificationDisabled,
         },
     )
+    if resp.status_code != 200:
+        raise RuntimeError(
+            "error while replying:\n" + json.dumps(resp.json(), indent=2)
+        )
+
     return resp.json()
 
 

@@ -5,8 +5,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from objprint import op
 
 from api.notion import get_upcoming_tasks
-from linex import Client, JoinContext, TextMessageContext, logger
-from settings import CHANNEL_SECRET, GROUP_ID, LINE_DEVS_ID, LINE_TOKEN, PORT
+from linex import Client, Image, JoinContext, TextMessageContext, logger
+from settings import CDN_BASE, CHANNEL_SECRET, GROUP_ID, LINE_DEVS_ID, LINE_TOKEN, PORT
 from utils.message import create_line_message
 
 client = Client(CHANNEL_SECRET, LINE_TOKEN)
@@ -20,6 +20,11 @@ async def on_ready():
     scheduler.start()
 
 
+@client.event
+async def on_join(ctx: JoinContext):
+    op(await ctx.fetch_group())
+
+
 @client.command(name="send")
 async def send(ctx: TextMessageContext):
     author = await ctx.fetch_user()
@@ -29,9 +34,9 @@ async def send(ctx: TextMessageContext):
     await ctx.reply("已發送作業訊息到群組！")
 
 
-@client.event
-async def on_join(ctx: JoinContext):
-    op(await ctx.fetch_group())
+@client.command(name="課表")
+async def classtable(ctx: TextMessageContext):
+    await ctx.reply(Image(original_content_url=CDN_BASE + "/classtable.png"))
 
 
 @client.command(name="test")
@@ -51,7 +56,9 @@ async def test(ctx: TextMessageContext):
     # await ctx.mark_as_read()
     print("fetching tasks")
     tasks = await get_upcoming_tasks()
+    print("fetched tasks")
     await ctx.reply(create_line_message(tasks))
+    print("sent")
 
 
 @client.command(name="info")

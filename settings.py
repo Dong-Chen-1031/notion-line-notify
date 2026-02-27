@@ -26,3 +26,5 @@ LINE_TOKEN: str = os.getenv("LINE_TOKEN", "")
 CHANNEL_SECRET: str = os.getenv("CHANNEL_SECRET", "")
 
 NOTION_DATABASE_ID: str = os.getenv("NOTION_DATABASE_ID", "")
+
+CDN_BASE: str = os.getenv("CDN_BASE", "")
