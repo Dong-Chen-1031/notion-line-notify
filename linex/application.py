@@ -18,6 +18,9 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from linex.command import Command
+from linex.models.context import TextMessageContext
+
 from .cache import GROUPS, MESSAGES, USERS
 from .exceptions import Unknown
 from .http import (
@@ -30,7 +33,7 @@ from .http import (
     test_webhook,
 )
 from .log import logger
-from .models import BotUser, Group, PostbackContext, TextMessageContext, User
+from .models import BotUser, Group, PostbackContext, User
 from .models.group import SourceGroup
 from .models.messages import to_valid_message_objects
 from .models.quick_reply import QuickReplyButton
@@ -47,7 +50,7 @@ class Client:
         channel_secret (:obj:`str`, optional): The channel secret, used to identify
             whether a request is sent by LINE or not. If not given, reads an
             environment variable named ``LINE_CHANNEL_SECRET`` instead.
-        channel_access_token (:obj:`str`, optional): The channel access token, used for
+        channel_access_token (:obj:`str`, optional): The ƒchannel access token, used for
             almost every single client-request. DO NOT LEAK IT.
             If not given, reads an environment variable named ``LINE_CHANNEL_ACCESS_TOKEN``
             instead.
@@ -114,7 +117,7 @@ class Client:
     user: BotUser
     ignore_standby: bool
     webhook: ApplicationWebhook
-    _commands: list[str]
+    _commands: dict[str, Command]
 
     def __init__(
         self,
@@ -139,15 +142,15 @@ class Client:
 
         self.client = client = httpx.AsyncClient(headers=self.headers)
         self.app = app = FastAPI(lifespan=self.lifespan)
-        self._commands = []
+        self._commands = {}
 
-        @app.exception_handler(Exception)
-        async def handle_them_all(*_):
-            logger.print_exception()
-            return JSONResponse(
-                status_code=500,
-                content={"message": "oops"},
-            )
+        # @app.exception_handler(Exception)
+        # async def handle_them_all(*_):
+        #     logger.print_exception()
+        #     return JSONResponse(
+        #         status_code=500,
+        #         content={"message": "oops"},
+        #     )
 
         @app.get("/")
         async def get_index():
@@ -232,6 +235,17 @@ class Client:
 
         return wrapper
 
+    async def process_commands(self, ctx: TextMessageContext) -> bool:
+        """Processes commands.
+
+        (coroutine)
+
+        Args:
+            ctx (TextMessageContext): The text message context.
+        """
+
+        return any([await cmd.handle_command(ctx) for cmd in self._commands.values()])
+
     async def emit(self, name: str, *data) -> None:
         """Emits a specific event.
 
@@ -257,11 +271,30 @@ class Client:
                    31.123
                )
         """
-        for handler in self.handlers[name]:
-            if not handler:
-                continue
+        # for handler in self.handlers[name]:
+        #     if not handler:
+        #         continue
 
-            await handler(*data)
+        #     await handler(*data)
+
+        async def do_event_safe(handler, *data):
+            try:
+                await handler(*data)
+            except Exception:
+                logger.routing.fail(
+                    "EVENT", name, f"an error occurred in handler {handler.__name__}"
+                )
+                logger.print_exception()
+
+        handlers = [
+            do_event_safe(handler, *data) for handler in self.handlers[name] if handler
+        ]
+
+        # for command
+        if name == "text" and not handlers:
+            handlers.append(do_event_safe(self.process_commands, *data))
+
+        await asyncio.gather(*handlers, return_exceptions=True)
 
     def run(self, **kwargs):
         """Runs the bot.
@@ -564,50 +597,9 @@ class Client:
                     f"Function {func.__name__} is not a coroutine (async) function."
                 )
 
-            self._commands.append(name)
-
             meta = get_params_with_types(func)
 
-            cmd_name = name
-
-            @self.event
-            async def on_text(ctx: TextMessageContext):
-                if not ctx.text.startswith(cmd_name):
-                    return
-
-                if not meta["kw"] and not meta["regular"]:
-                    return await func(ctx)
-
-                parts: list[str] = ctx.text[len(cmd_name + " ") :].split(";")
-                args = []
-                args.append(ctx)
-                kwargs = {}
-
-                for index, part in enumerate(parts):
-                    if meta["kw"] and (index + 1) > len(meta["regular"]):  # type: ignore
-                        # keyword-only
-                        if meta.get("kw") and not kwargs:
-                            kwargs[meta["kw"][0]] = ""
-
-                        kwargs[meta["kw"][0]] += part + " "
-                        continue
-
-                    name, _type = meta["regular"][index]  # type: ignore
-
-                    if _type not in (str, int, float, bool):
-                        raise TypeError(
-                            f"Postback handler {func.__name__}:\n"
-                            f"Argument '{name}' is not a supported type. "
-                            "(From str, int, float, and bool.)"
-                        )
-
-                    args.append(_type(part))
-
-                if kwargs:
-                    _name = kwargs[meta["kw"][0]]  # type: ignore
-                    kwargs[meta["kw"][0]] = _name.rstrip()  # type: ignore
-
-                await func(*args, **kwargs)
+            self._commands[name] = Command(name, func, meta)
 
             return func
 

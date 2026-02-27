@@ -1,4 +1,4 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 
@@ -27,12 +27,17 @@ from .models import (
     VideoViewingCompleteContext,
 )
 
+if TYPE_CHECKING:
+    from linex.application import Client
+
 
 def add_to_message_cache(
     context: MessageContext,
 ) -> None:
     """Adds a message context to the cache."""
     MESSAGES[context.id] = context
+    if len(MESSAGES) > 1000:
+        MESSAGES.pop(next(iter(MESSAGES)))
 
 
 MESSAGE_CONTEXTS: dict[str, type[MessageContext]] = {
@@ -60,7 +65,7 @@ OTHER_CONTEXTS: dict[str, type[BaseContext]] = {
 
 
 async def process(
-    cls: Any,
+    cls: Client,
     client: httpx.AsyncClient,
     payload: dict,
 ) -> None:

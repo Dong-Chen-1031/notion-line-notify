@@ -17,12 +17,13 @@ scheduler = AsyncIOScheduler()
 @client.event
 async def on_ready():
     logger.log(f"Logged in as {client.user.display_name}")
+    scheduler.start()
 
 
 @client.command(name="send")
 async def send(ctx: TextMessageContext):
     author = await ctx.fetch_user()
-    if author.id != LINE_DEVS_ID:
+    if author.id not in LINE_DEVS_ID:
         return
     await send_message()
     await ctx.reply("已發送作業訊息到群組！")
@@ -47,9 +48,19 @@ async def test(ctx: TextMessageContext):
     await ctx.reply(create_line_message(tasks))
 
 
+@client.command(name="info")
+async def info(ctx: TextMessageContext):
+    author = ctx.source_as_group()
+    # if author.id not in LINE_DEVS_ID:
+    #     return
+
+    await ctx.mark_as_read()
+    await ctx.reply(f"群組 ID: {author.id}")
+
+
 @client.event
 async def on_text(ctx: TextMessageContext):
-    if ctx.text in ["send", "group", "test"]:
+    if await client.process_commands(ctx):
         return
     if ctx.source_type == "user":
         await ctx.mark_as_read()
@@ -166,13 +177,13 @@ async def send_message():
     )
 
 
-@client.event
-async def on_start():
-    scheduler.start()
-
-
 scheduler.add_job(
-    send_message, "cron", hour=17, minute=0, timezone=ZoneInfo("Asia/Taipei")
+    send_message,
+    "cron",
+    hour=17,
+    minute=00,
+    timezone=ZoneInfo("Asia/Taipei"),
+    day_of_week="0-4,6",
 )
 
 

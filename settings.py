@@ -24,3 +24,5 @@ PORT: int = int(os.getenv("PORT", "11111"))
 LINE_TOKEN: str = os.getenv("LINE_TOKEN", "")
 
 CHANNEL_SECRET: str = os.getenv("CHANNEL_SECRET", "")
+
+# print(GROUP_ID)
