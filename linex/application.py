@@ -50,7 +50,7 @@ class Client:
         channel_secret (:obj:`str`, optional): The channel secret, used to identify
             whether a request is sent by LINE or not. If not given, reads an
             environment variable named ``LINE_CHANNEL_SECRET`` instead.
-        channel_access_token (:obj:`str`, optional): The ƒchannel access token, used for
+        channel_access_token (:obj:`str`, optional): The channel access token, used for
             almost every single client-request. DO NOT LEAK IT.
             If not given, reads an environment variable named ``LINE_CHANNEL_ACCESS_TOKEN``
             instead.
@@ -178,10 +178,7 @@ class Client:
             if dev:
                 logger.print(payload)
 
-            try:
-                await process(self, client, payload)
-            except Exception as err:
-                raise err
+            await process(self, client, payload)
             return {"message": "happy birthday"}
 
     def event(self, handler: Callable[..., Any]) -> None:
@@ -303,7 +300,6 @@ class Client:
             "log_level": logging.WARNING,
             **kwargs,
         }
-        print(self.start_kwargs)
         uvicorn.run(**self.start_kwargs)
 
     @asynccontextmanager
@@ -338,6 +334,8 @@ class Client:
         await self.emit("ready")
 
         yield
+
+        await self.client.aclose()
 
     # ===============
     # utils
