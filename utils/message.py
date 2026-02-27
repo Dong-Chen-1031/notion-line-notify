@@ -45,6 +45,7 @@ def create_line_message(tasks: list[Task]) -> Flex:
 
         tasks_str_by_subject[subject] = tasks_str
 
+    # print(tasks_str_by_subject)
     all_homework = []
     for subject, tasks_str in tasks_str_by_subject.items():
         for i, text in enumerate(tasks_str):
