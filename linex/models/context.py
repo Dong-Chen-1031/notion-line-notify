@@ -435,7 +435,7 @@ class VideoMessageContext(MediaMessageContext):
 @dataclass
 class AudioMessageContext(MediaMessageContext):
     duration: int | None = field(init=False)
-    """Duration of the video file. (milliseconds).
+    """Duration of the audio file. (milliseconds).
 
     May not always include.
     """
