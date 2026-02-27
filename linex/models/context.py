@@ -706,7 +706,7 @@ class AccountLinkContext(RepliableContext):
     You cannot reply to the user if linking the account has failed.
     """
 
-    nounce: str = field(init=False)
+    nonce: str = field(init=False)
     """Specified nonce (number used once) when verifying the user ID.
 
     For more information, see Generate a nonce and redirect the user to the LINE Platform in the Messaging API documentation.
@@ -718,4 +718,4 @@ class AccountLinkContext(RepliableContext):
         super().__post_init__()
         link = self.payload["link"]
         self.result = link["result"]
-        self.nounce = link["nounce"]
+        self.nounce = link["nonce"]
