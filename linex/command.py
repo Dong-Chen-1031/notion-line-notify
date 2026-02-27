@@ -1,13 +1,14 @@
+from dataclasses import dataclass
 from typing import Awaitable, Callable
 
-from linex.models.context import TextMessageContext
+from .models.context import TextMessageContext
 
 
+@dataclass
 class Command:
-    def __init__(self, name: str, func: Callable[..., Awaitable], meta: dict):
-        self.name = name
-        self.func = func
-        self.meta = meta
+    name: str
+    func: Callable[..., Awaitable]
+    meta: dict
 
     async def handle_command(
         self,
