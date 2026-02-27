@@ -124,7 +124,7 @@ class BaseContext:
     def source_as_multi_person(self) -> SourceMultiPerson:
         """Casts the source as a multi-person chat.
 
-        Raises an error if the source type is not `user`.
+        Raises an error if the source type is not `room`.
         """
         assert self.source is not None and self.source_type == "room"
         return SourceMultiPerson.from_json(self.source)
@@ -362,11 +362,11 @@ class MediaMessageContext(MessageContext):
     ) -> str:
         """Downloads the file.
 
-        In the ``fn``, use ``${random}`` to use a random filename, ``${ext}``
+        In the `file`, use `${random}` to use a random filename, `${ext}`
         for the extension name (the dot is included).
 
         Args:
-            fn (str, optional): The filename or path.
+            file (optional): The filename/path or IO target.
             disable_string_parsing (bool, optional): Whether to disable string parsing.
                 See the note.
 
@@ -404,7 +404,7 @@ class MediaMessageContext(MessageContext):
 
 
 @dataclass
-class ImageMessageContext(MessageContext):
+class ImageMessageContext(MediaMessageContext):
     image_set: dict[str, str | int] | None = field(init=False)
     """The image set.
 
@@ -530,7 +530,7 @@ class UnsendContext(BaseContext):
 
     def __post_init__(self):
         super().__post_init__()
-        self.id = self.payload["unsend"]["messageId"]
+        self.message_id = self.payload["unsend"]["messageId"]
 
 
 @dataclass
@@ -608,7 +608,7 @@ class PostbackContext(RepliableContext):
     def __post_init__(self):
         super().__post_init__()
         self.data = self.payload["postback"]["data"]
-        self.params = self.payload["postback"]["params"]
+        self.params = self.payload["postback"].get("params", {})
 
     @property
     def datetime(self) -> str | None:
@@ -682,7 +682,7 @@ class BeaconContext(RepliableContext):
         super().__post_init__()
         beacon = self.payload["beacon"]
         self.hardware_id = beacon["hwid"]
-        self.type = beacon["type"]
+        self.beacon_event_type = beacon["type"]
         self.device_message = beacon.get("dm")
 
 
@@ -706,7 +706,7 @@ class AccountLinkContext(RepliableContext):
     You cannot reply to the user if linking the account has failed.
     """
 
-    nounce: str = field(init=False)
+    nonce: str = field(init=False)
     """Specified nonce (number used once) when verifying the user ID.
 
     For more information, see Generate a nonce and redirect the user to the LINE Platform in the Messaging API documentation.
@@ -718,4 +718,4 @@ class AccountLinkContext(RepliableContext):
         super().__post_init__()
         link = self.payload["link"]
         self.result = link["result"]
-        self.nounce = link["nounce"]
+        self.nounce = link["nonce"]

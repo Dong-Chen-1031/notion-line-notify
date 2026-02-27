@@ -27,13 +27,13 @@ class Group:
     name: str = field(init=False)
     """The group name."""
 
-    picture_url: str = field(init=False)
+    picture_url: str | None = field(init=False)
     """The group picture (icon) URL."""
 
     def __post_init__(self):
         self.id = self.payload["groupId"]
         self.name = self.payload["groupName"]
-        self.picture_url = self.payload["pictureUrl"]
+        self.picture_url = self.payload.get("pictureUrl")
 
     async def count(self) -> int:
         """Shows the group members count."""
