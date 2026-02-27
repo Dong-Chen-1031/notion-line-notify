@@ -236,8 +236,11 @@ class Client:
             ctx (TextMessageContext): The text message context.
         """
 
-        return any([await cmd.handle_command(ctx) for cmd in self._commands.values()])
+        for cmd in self._commands.values():
+            if await cmd.handle_command(ctx):
+                return True
 
+        return False
     async def emit(self, name: str, *data) -> None:
         """Emits a specific event.
 
