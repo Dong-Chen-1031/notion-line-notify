@@ -530,7 +530,7 @@ class UnsendContext(BaseContext):
 
     def __post_init__(self):
         super().__post_init__()
-        self.id = self.payload["unsend"]["messageId"]
+        self.message_id = self.payload["unsend"]["messageId"]
 
 
 @dataclass
