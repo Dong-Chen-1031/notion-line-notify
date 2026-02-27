@@ -41,8 +41,8 @@ class BaseContext:
     is_redelivery: bool = field(init=False)
     """Whether this event is a webhook redelivery."""
 
-    timestamp: int = field(init=False)
-    """The timestamp in seconds.
+    timestamp: float = field(init=False)
+    """The timestamp in seconds as a float.
 
     Could be used to calculate the ping.
     """
