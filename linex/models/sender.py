@@ -12,8 +12,8 @@ class Sender:
             a message
     """
 
-    name: str | None
-    icon_url: str | None
+    name: str | None = None
+    icon_url: str | None = None
 
     def __post_init__(self):
         if not self.name and not self.icon_url:
