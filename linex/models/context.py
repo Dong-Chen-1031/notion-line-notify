@@ -404,7 +404,7 @@ class MediaMessageContext(MessageContext):
 
 
 @dataclass
-class ImageMessageContext(MessageContext):
+class ImageMessageContext(MediaMessageContext):
     image_set: dict[str, str | int] | None = field(init=False)
     """The image set.
 
