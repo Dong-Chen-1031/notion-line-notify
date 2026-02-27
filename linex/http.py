@@ -82,7 +82,7 @@ async def display_loading(
     client: httpx.AsyncClient, chat_id: str, seconds: int | None
 ) -> dict:
     resp = await client.post(
-        API_ENDPOINT + "/bot/message/reply",
+        API_ENDPOINT + "/chat/loading/start",
         json={"chatId": chat_id, "loadingSeconds": seconds},
     )
     if resp.status_code != 200:
