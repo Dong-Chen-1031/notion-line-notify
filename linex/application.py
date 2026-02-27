@@ -488,7 +488,7 @@ class Client:
         quick_replies: Optional[list[QuickReplyButton]] = None,
         notification_disabled: bool = False,
     ):
-        """Reply to the message.
+        """Sends a push message to either a group or a user.
 
         Could only used **once** for each message.
 
@@ -501,7 +501,6 @@ class Client:
                 silent or not. If ``True``, user will not receive the push
                 notification for their device.
         """
-        """Sends a push message to the group."""
         if isinstance(to, str):
             to_id = to
         elif isinstance(to, Group | User):
