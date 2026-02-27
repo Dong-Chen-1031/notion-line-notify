@@ -32,7 +32,7 @@ async def get_group_member_count(headers: dict, group_id: str) -> dict:
 rr_getGroupChat = RateLimit.other()
 
 
-async def get_group_chat_summary(
+async def fetch_group_chat_summary(
     client: httpx.AsyncClient, headers: dict, group_id: str
 ) -> dict[str, str]:
     await rr_getGroupChat.call()
@@ -87,7 +87,7 @@ async def push(
 rr_getUser = RateLimit.other()
 
 
-async def get_user(
+async def fetch_user(
     client: httpx.AsyncClient, headers: dict, user_id: str
 ) -> dict[str, str]:
     await rr_getUser.call()
@@ -98,7 +98,7 @@ async def get_user(
     return resp.json()
 
 
-async def get_location(location: str) -> list[dict]:
+async def fetch_location(location: str) -> list[dict]:
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             "https://nominatim.openstreetmap.org/search",

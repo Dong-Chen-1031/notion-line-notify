@@ -17,15 +17,24 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from linex.models.messages import _to_valid_message_objects
-from linex.models.quick_reply import QuickReplyButton
-from linex.models.sender import Sender
-
 from .cache import GROUPS, MESSAGES, USERS
 from .exceptions import Unknown
-from .http import get_bot_info, get_webhook, push, set_webhook_endpoint, test_webhook
+from .http import (
+    fetch_group_chat_summary,
+    fetch_user,
+    get_bot_info,
+    get_webhook,
+    push,
+    set_webhook_endpoint,
+    test_webhook,
+)
 from .log import logger
 from .models import BotUser, Group, PostbackContext, TextMessageContext, User
+from .models.group import SourceGroup
+from .models.messages import _to_valid_message_objects
+from .models.quick_reply import QuickReplyButton
+from .models.sender import Sender
+from .models.user import SourceUser
 from .processing import process
 from .utils import get_params_with_types
 
@@ -594,6 +603,31 @@ class Client:
             return func
 
         return wrapper
+
+    async def fetch_user(self, suser: str | SourceUser) -> User:
+        """Fetches the author."""
+        user = User.from_json(
+            await fetch_user(
+                self.client, self.headers, suser if isinstance(suser, str) else suser.id
+            )
+        )
+        USERS[user.id] = user
+
+        return user
+
+    async def fetch_group(self, sgroup: str | SourceGroup) -> Group:
+        """Fetches group information."""
+        group = Group(
+            self.client,
+            self.headers,
+            await fetch_group_chat_summary(
+                self.client,
+                self.headers,
+                sgroup if isinstance(sgroup, str) else sgroup.id,
+            ),
+        )
+        GROUPS[group.id] = group
+        return group
 
 
 class ApplicationWebhook:

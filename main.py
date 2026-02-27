@@ -50,6 +50,7 @@ async def on_text(ctx: TextMessageContext):
     if ctx.text in ["send", "group", "test"]:
         return
     if ctx.source_type == "user":
+        user = ctx.source_as_user()
         await ctx.reply("有讀狀態訊息的同學都知道，不要私訊我，要私訊請找另一個 Dong。")
 
 

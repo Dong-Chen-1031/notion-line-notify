@@ -6,7 +6,7 @@ from typing import Any, Literal, Optional
 
 from ..abc import AbstractLineAction, AbstractLineMessage
 from ..exceptions import NotFound
-from ..http import get_location
+from ..http import fetch_location
 from .emoji import Emoji
 
 
@@ -262,7 +262,7 @@ class Location(AbstractLineMessage):
         Args:
             name (str): The location name. (e.g., ``Berlin``)
         """
-        data: list[dict] = await get_location(name)
+        data: list[dict] = await fetch_location(name)
 
         if not data:
             raise NotFound(f"Location not found: {name!r}")

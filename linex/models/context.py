@@ -11,7 +11,7 @@ import httpx
 
 from ..cache import GROUPS, USERS
 from ..exceptions import CannotReply
-from ..http import fetch_file, get_group_chat_summary, get_user, reply
+from ..http import fetch_file, fetch_group_chat_summary, fetch_user, reply
 from .emoji import Emoji
 from .group import Group, SourceGroup
 from .mention import Mention
@@ -128,7 +128,7 @@ class BaseContext:
         assert self.source is not None
 
         author = User.from_json(
-            await get_user(self.client, self.headers, self.source["userId"])
+            await fetch_user(self.client, self.headers, self.source["userId"])
         )
         USERS[author.id] = author
 
@@ -144,7 +144,7 @@ class BaseContext:
         group = Group(
             self.client,
             self.headers,
-            await get_group_chat_summary(
+            await fetch_group_chat_summary(
                 self.client, self.headers, self.source["groupId"]
             ),
         )
