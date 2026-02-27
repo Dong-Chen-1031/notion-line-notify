@@ -89,8 +89,6 @@ async def process(
             f"[link={settings_link}]✨ Open Settings[/link]"
         )
 
-    args: tuple[httpx.AsyncClient, dict[str, str]] = (client, headers)
-
     def fulfill_pendings(name: str, context: Any):
         for item in list(cls.pending[name]):
             cls.pending[name][item] = context
