@@ -682,7 +682,7 @@ class BeaconContext(RepliableContext):
         super().__post_init__()
         beacon = self.payload["beacon"]
         self.hardware_id = beacon["hwid"]
-        self.type = beacon["type"]
+        self.beacon_event_type = beacon["type"]
         self.device_message = beacon.get("dm")
 
 
