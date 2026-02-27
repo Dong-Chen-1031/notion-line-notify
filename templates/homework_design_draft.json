@@ -1,0 +1,89 @@
+{
+  "type": "bubble",
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+          {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "text": "星期五",
+                "color": "#fc4e42",
+                "align": "center",
+                "size": "xs",
+                "offsetTop": "4px"
+              },
+              {
+                "type": "text",
+                "text": "27",
+                "align": "center",
+                "size": "xxl"
+              }
+            ],
+            "cornerRadius": "md",
+            "alignItems": "center",
+            "backgroundColor": "#f1f1f1",
+            "justifyContent": "center",
+            "width": "60px",
+            "height": "60px"
+          },
+          {
+            "type": "text",
+            "text": "2/27 (五) 的作業",
+            "weight": "bold",
+            "size": "xl"
+          }
+        ],
+        "justifyContent": "flex-start",
+        "alignItems": "center",
+        "spacing": "20px",
+        "paddingBottom": "12px"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "type": "box",
+        "layout": "vertical",
+        "margin": "lg",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "box",
+            "layout": "baseline",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "text",
+                "text": "{{subject}}",
+                "color": "#aaaaaa",
+                "size": "sm",
+                "flex": 2
+              },
+              {
+                "type": "text",
+                "text": "{{content}}",
+                "wrap": true,
+                "color": "#666666",
+                "size": "sm",
+                "flex": 6
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "styles": {
+    "header": {
+      "separator": false
+    }
+  }
+}

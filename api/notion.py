@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from notion_client import AsyncClient as NotionClient
 
-from settings import NOTION_TOKEN
+from settings import NOTION_DATABASE_ID, NOTION_TOKEN
 
 notion = NotionClient(auth=NOTION_TOKEN)
 
@@ -48,12 +48,10 @@ async def get_upcoming_tasks() -> list[Task]:
         list[Task]: 未來的作業列表
     """
     tasks: dict[str, Any | list[dict]] = await notion.data_sources.query(
-        "262be96b-9601-8014-bb40-000b34f82910",
+        NOTION_DATABASE_ID,
         filter={
             "property": "截止日期",
-            "date": {
-                "on_or_after": datetime.now(ZoneInfo("Asia/Taipei")).date().isoformat()
-            },
+            "date": {"after": datetime.now(ZoneInfo("Asia/Taipei")).date().isoformat()},
         },
         sorts=[
             {"property": "截止日期", "direction": "ascending"},

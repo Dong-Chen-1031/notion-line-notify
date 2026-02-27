@@ -1,4 +1,3 @@
-from . import ext as ext
 from . import utils as utils
 from .abc import AbstractLineMessage
 from .application import Client
@@ -11,8 +10,6 @@ from .models import (
     BaseContext,
     BeaconContext,
     BotUser,
-    DeviceLinkContext,
-    DeviceUnlinkContext,
     Emoji,
     FileMessageContext,
     FollowContext,
@@ -22,12 +19,13 @@ from .models import (
     ImageMessageContext,
     JoinContext,
     LeaveContext,
-    LINEThingsScenarioExecutionContext,
     Location,
     LocationMessageContext,
+    MediaMessageContext,
     MemberJoinContext,
     MemberLeaveContext,
     Mention,
+    MessageContext,
     PostbackContext,
     QuickReplyButton,
     Sender,
@@ -55,10 +53,10 @@ __all__ = (
     "User",
     "RateLimit",
     "logger",
-    "BotUser", 
-    "User", 
-    "Emoji", 
-    "Mention", 
+    "BotUser",
+    "User",
+    "Emoji",
+    "Mention",
     "Group",
     "Text",
     "Sticker",
@@ -90,9 +88,7 @@ __all__ = (
     "VideoViewingCompleteContext",
     "BeaconContext",
     "AccountLinkContext",
-    "DeviceLinkContext",
-    "DeviceUnlinkContext",
-    "LINEThingsScenarioExecutionContext",
+    "MessageContext",
     "utils",
-    "ext"
+    "MediaMessageContext",
 )

@@ -9,6 +9,8 @@ lerna-debug.log*
 
 keys/
 
+.env
+
 node_modules
 dist
 dist-ssr
@@ -228,7 +230,9 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+.env*
+!.env.example
+.venv
 .venv
 env/
 venv/

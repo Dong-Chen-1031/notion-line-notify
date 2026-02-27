@@ -1,6 +1,7 @@
-from typing import Optional
+from dataclasses import dataclass
 
 
+@dataclass(frozen=True)
 class Sender:
     """Represents a sender.
 
@@ -10,35 +11,19 @@ class Sender:
         icon_url (str, optional): URL of the image to display as an icon when sending
             a message
     """
-    __slots__ = (
-        'name',
-        'icon_url'
-    )
-    name: Optional[str]
-    icon_url: Optional[str]
 
-    def __init__(
-        self,
-        *,
-        name: Optional[str],
-        icon_url: Optional[str]
-    ):
-        if not name and not icon_url:
+    name: str | None = None
+    icon_url: str | None = None
+
+    def __post_init__(self):
+        if not self.name and not self.icon_url:
+            raise ValueError("Must provide either the name or the icon URL, or both.")
+
+        if self.name and "line" in self.name.lower():
             raise ValueError(
-                "Must provide either the name or the icon URL, or both."
+                "The word 'LINE' shouldn't be in a name, it'd get rejected."
             )
-
-        if name and "line" in name.lower():
-            raise ValueError(
-                "The word 'LINE' shouldn't be in a name. Would be rejected."
-            )
-
-        self.name = name
-        self.icon_url = icon_url
 
     def to_json(self):
         """Converts to a valid JSON payload."""
-        return {
-            "name": self.name,
-            "iconUrl": self.icon_url
-        }
+        return {"name": self.name, "iconUrl": self.icon_url}

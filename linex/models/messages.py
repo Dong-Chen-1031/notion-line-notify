@@ -6,7 +6,7 @@ from typing import Any, Literal, Optional
 
 from ..abc import AbstractLineAction, AbstractLineMessage
 from ..exceptions import NotFound
-from ..http import get_location
+from ..http import fetch_location
 from .emoji import Emoji
 
 
@@ -88,18 +88,16 @@ class Image(AbstractLineMessage):
     original: str
     preview: str
 
-    def __init__(
-        self, original_content_url: str, preview_content_url: Optional[str] = None
-    ):
+    def __init__(self, original_content_url: str, preview_image_url: str | None = None):
         self.original = original_content_url
-        self.preview = preview_content_url or original_content_url
+        self.preview = preview_image_url or original_content_url
 
     def to_json(self):
         """Converts to a valid JSON payload."""
         return {
             "type": "image",
             "originalContentUrl": self.original,
-            "previewContentUrl": self.preview,
+            "previewImageUrl": self.preview,
         }
 
 
@@ -262,7 +260,7 @@ class Location(AbstractLineMessage):
         Args:
             name (str): The location name. (e.g., ``Berlin``)
         """
-        data: list[dict] = await get_location(name)
+        data: list[dict] = await fetch_location(name)
 
         if not data:
             raise NotFound(f"Location not found: {name!r}")
@@ -318,8 +316,11 @@ class Imagemap(AbstractLineMessage):
             "altText": alt_text,
             "baseSize": base_size,
             "video": video,
-            "actions": [action.to_json() for action in actions]
-            if isinstance(actions[0], AbstractLineAction)
+            "actions": [
+                action if isinstance(action, dict) else action.to_json()
+                for action in actions
+            ]
+            if len(actions) > 0 and isinstance(actions[0], AbstractLineAction)
             else actions,
         }
 
@@ -410,10 +411,10 @@ class Templates:
                     if isinstance(default_action, AbstractLineAction)
                     else default_action,
                     "actions": [
-                        action.to_json()
-                        for action in actions  # type: ignore
+                        action if isinstance(action, dict) else action.to_json()
+                        for action in actions
                     ]
-                    if isinstance(actions[0], AbstractLineAction)
+                    if len(actions) > 0 and isinstance(actions[0], AbstractLineAction)
                     else actions,
                 },
             }
@@ -448,8 +449,11 @@ class Templates:
                 "template": {
                     "type": "confirm",
                     "text": text,
-                    "actions": [action.to_json() for action in actions]
-                    if isinstance(actions[0], AbstractLineAction)
+                    "actions": [
+                        action if isinstance(action, dict) else action.to_json()
+                        for action in actions
+                    ]
+                    if len(actions) > 0 and isinstance(actions[0], AbstractLineAction)
                     else actions,
                 },
             }
@@ -517,7 +521,7 @@ class Flex(AbstractLineMessage):
         return self.json
 
 
-def _to_valid_message_objects(
+def to_valid_message_objects(
     messages: tuple[AbstractLineMessage | dict | str] | Any,
 ) -> list[dict]:
     """Converts the user-defined message objects to the valid ones.

@@ -9,22 +9,36 @@ import os
 import socket
 import uuid
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from inspect import iscoroutinefunction as is_coro
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Literal, Optional
 
+import httpx
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from linex.models.messages import _to_valid_message_objects
-from linex.models.quick_reply import QuickReplyButton
-from linex.models.sender import Sender
+from linex.command import Command
+from linex.models.context import TextMessageContext
 
-from .cache import GROUPS, HTTP_CLIENT, MESSAGES, USERS
+from .cache import GROUPS, MESSAGES, USERS
 from .exceptions import Unknown
-from .http import get_bot_info, get_webhook, push, set_webhook_endpoint, test_webhook
+from .http import (
+    fetch_group_chat_summary,
+    fetch_user,
+    fetch_webhook,
+    get_bot_info,
+    push,
+    set_webhook_endpoint,
+    test_webhook,
+)
 from .log import logger
-from .models import BotUser, Group, PostbackContext, TextMessageContext, User
+from .models import BotUser, Group, PostbackContext, User
+from .models.group import SourceGroup
+from .models.messages import to_valid_message_objects
+from .models.quick_reply import QuickReplyButton
+from .models.sender import Sender
+from .models.user import SourceUser
 from .processing import process
 from .utils import get_params_with_types
 
@@ -35,9 +49,11 @@ class Client:
     Args:
         channel_secret (:obj:`str`, optional): The channel secret, used to identify
             whether a request is sent by LINE or not. If not given, reads an
-            environment variable named ``LINEX_CHANNEL_SECRET`` instead.
+            environment variable named ``LINE_CHANNEL_SECRET`` instead.
         channel_access_token (:obj:`str`, optional): The channel access token, used for
             almost every single client-request. DO NOT LEAK IT.
+            If not given, reads an environment variable named ``LINE_CHANNEL_ACCESS_TOKEN``
+            instead.
         dev (:obj:`bool`, optional): Whether to enable dev mode or not. It's especially
             useful when you're writing an extension for Linex.
         ignore_standby (bool, optional): Whether to ignore the ``standby`` status.
@@ -57,6 +73,7 @@ class Client:
         "channel_secret",
         "channel_access_token",
         "app",
+        "client",
         "user",
         "headers",
         "is_ready",
@@ -67,6 +84,7 @@ class Client:
     )
 
     app: FastAPI
+    client: httpx.AsyncClient
     channel_secret: str
     channel_access_token: str
     handlers: dict[str, list[Callable[..., Any]]] = {
@@ -99,7 +117,7 @@ class Client:
     user: BotUser
     ignore_standby: bool
     webhook: ApplicationWebhook
-    _commands: list[str]
+    _commands: dict[str, Command]
 
     def __init__(
         self,
@@ -110,10 +128,11 @@ class Client:
         ignore_standby: bool = True,
         disable_logs: bool = False,
     ) -> None:
-        self.channel_secret = channel_secret or os.environ["LINEX_CHANNEL_SECRET"]
+        self.channel_secret = channel_secret or os.environ["LINE_CHANNEL_SECRET"]
         self.channel_access_token = (
-            channel_access_token or os.environ["LINEX_CHANNEL_ACCESS_TOKEN"]
+            channel_access_token or os.environ["LINE_CHANNEL_ACCESS_TOKEN"]
         )
+        self.headers = {"Authorization": f"Bearer {self.channel_access_token}"}
 
         self.is_ready = False
         self.ignore_standby = ignore_standby
@@ -121,12 +140,10 @@ class Client:
         if disable_logs:
             logger.disabled = True
 
+        self.client = client = httpx.AsyncClient(headers=self.headers)
         self.app = app = FastAPI(lifespan=self.lifespan)
-        self._commands = []
-
-        @app.exception_handler(Exception)
-        async def handle_them_all(*_):
-            logger.print_exception()
+        self._commands = {}
+        self.start_kwargs = {}
 
         @app.get("/")
         async def get_index():
@@ -161,7 +178,7 @@ class Client:
             if dev:
                 logger.print(payload)
 
-            await process(self, payload, HTTP_CLIENT, self.headers)
+            await process(self, client, payload)
             return {"message": "happy birthday"}
 
     def event(self, handler: Callable[..., Any]) -> None:
@@ -208,6 +225,22 @@ class Client:
 
         return wrapper
 
+    async def process_commands(self, ctx: TextMessageContext) -> bool:
+        """Processes commands.
+
+        Returns whether any command has been executed.
+
+        (coroutine)
+
+        Args:
+            ctx (TextMessageContext): The text message context.
+        """
+
+        for cmd in self._commands.values():
+            if await cmd.handle_command(ctx):
+                return True
+
+        return False
     async def emit(self, name: str, *data) -> None:
         """Emits a specific event.
 
@@ -233,11 +266,30 @@ class Client:
                    31.123
                )
         """
-        for handler in self.handlers[name]:
-            if not handler:
-                continue
+        # for handler in self.handlers[name]:
+        #     if not handler:
+        #         continue
 
-            await handler(*data)
+        #     await handler(*data)
+
+        async def do_event_safe(handler, *data):
+            try:
+                await handler(*data)
+            except Exception:
+                logger.routing.fail(
+                    "EVENT", name, f"an error occurred in handler {handler.__name__}"
+                )
+                logger.print_exception()
+
+        handlers = [
+            do_event_safe(handler, *data) for handler in self.handlers[name] if handler
+        ]
+
+        # for command
+        if name == "text" and not handlers:
+            handlers.append(do_event_safe(self.process_commands, *data))
+
+        await asyncio.gather(*handlers, return_exceptions=True)
 
     def run(self, **kwargs):
         """Runs the bot.
@@ -245,8 +297,7 @@ class Client:
         Args:
             **kwargs: Arguments for ``uvicorn.run``.
         """
-        self.headers = {"Authorization": f"Bearer {self.channel_access_token}"}
-        self.webhook = ApplicationWebhook(self.headers)
+        self.webhook = ApplicationWebhook(self.client)
         self.start_kwargs = {
             "app": self.app,
             "host": "0.0.0.0",
@@ -281,13 +332,15 @@ class Client:
             )
         logger.print()
 
-        self.user = BotUser(await get_bot_info(self.headers))
+        self.user = BotUser.from_json(await get_bot_info(self.client))
         USERS[self.user.id] = self.user
 
         self.is_ready = True
         await self.emit("ready")
 
         yield
+
+        await self.client.aclose()
 
     # ===============
     # utils
@@ -345,13 +398,25 @@ class Client:
     def clear_cache(self) -> None:
         """Clears all of the cache.
 
-        .. warning ::
-            This action is NOT revertable.
+        This action is NOT revertable.
         """
         # lol funni joke
         victims = (GROUPS, USERS, MESSAGES)
         for target in victims:
             target.clear()
+
+    def clear_cache_for(self, *targets: Literal["groups", "users", "messages"]):
+        """Clear the cache for specific targets.
+
+        Example:
+        ```python
+        clear_cache_for("messages")
+        clear_cache_for("groups", "users", "messages")
+        ```
+        """
+        victims = {"groups": GROUPS, "users": USERS, "messages": MESSAGES}
+        for target in targets:
+            victims[target].clear()
 
     async def wait_for(
         self,
@@ -472,9 +537,7 @@ class Client:
         quick_replies: Optional[list[QuickReplyButton]] = None,
         notification_disabled: bool = False,
     ):
-        """Reply to the message.
-
-        Could only used **once** for each message.
+        """Sends a push message to either a group or a user.
 
         Args:
             *messages (str | Any): The messages to send.
@@ -485,7 +548,6 @@ class Client:
                 silent or not. If ``True``, user will not receive the push
                 notification for their device.
         """
-        """Sends a push message to the group."""
         if isinstance(to, str):
             to_id = to
         elif isinstance(to, Group | User):
@@ -493,7 +555,7 @@ class Client:
         else:
             raise TypeError("Argument 'to' must be of type str, Group, or User.")
 
-        valid_messages = _to_valid_message_objects(messages)
+        valid_messages = to_valid_message_objects(messages)
 
         if quick_replies:
             valid_messages[-1] |= {
@@ -504,8 +566,7 @@ class Client:
             valid_messages[-1] |= {"sender": sender.to_json()}
 
         await push(
-            HTTP_CLIENT,
-            self.headers,
+            self.client,
             to_id,
             valid_messages,
             notification_disabled,
@@ -531,70 +592,39 @@ class Client:
                     f"Function {func.__name__} is not a coroutine (async) function."
                 )
 
-            self._commands.append(name)
-
             meta = get_params_with_types(func)
 
-            cmd_name = name
-
-            @self.event
-            async def on_text(ctx: TextMessageContext):
-                if not ctx.content.startswith(cmd_name):
-                    return
-
-                if not meta["kw"] and not meta["regular"]:
-                    return await func(ctx)
-
-                parts: list[str] = ctx.content[len(cmd_name + " ") :].split(";")
-                args = []
-                args.append(ctx)
-                kwargs = {}
-
-                for index, part in enumerate(parts):
-                    if meta["kw"] and (index + 1) > len(meta["regular"]):  # type: ignore
-                        # keyword-only
-                        if meta.get("kw") and not kwargs:
-                            kwargs[meta["kw"][0]] = ""
-
-                        kwargs[meta["kw"][0]] += part + " "
-                        continue
-
-                    name, _type = meta["regular"][index]  # type: ignore
-
-                    if _type not in (str, int, float, bool):
-                        raise TypeError(
-                            f"Postback handler {func.__name__}:\n"
-                            f"Argument '{name}' is not a supported type. "
-                            "(From str, int, float, and bool.)"
-                        )
-
-                    args.append(_type(part))
-
-                if kwargs:
-                    _name = kwargs[meta["kw"][0]]  # type: ignore
-                    kwargs[meta["kw"][0]] = _name.rstrip()  # type: ignore
-
-                await func(*args, **kwargs)
+            self._commands[name] = Command(name, func, meta)
 
             return func
 
         return wrapper
 
+    async def fetch_user(self, suser: str | SourceUser) -> User:
+        """Fetches the author."""
+        user = User.from_json(
+            await fetch_user(self.client, suser if isinstance(suser, str) else suser.id)
+        )
+        USERS[user.id] = user
 
+        return user
+
+    async def fetch_group(self, sgroup: str | SourceGroup) -> Group:
+        """Fetches group information."""
+        group = Group(
+            self.client,
+            await fetch_group_chat_summary(
+                self.client,
+                sgroup if isinstance(sgroup, str) else sgroup.id,
+            ),
+        )
+        GROUPS[group.id] = group
+        return group
+
+
+@dataclass(frozen=True)
 class ApplicationWebhook:
-    """Represents an application webhook object.
-
-    Contains methods.
-
-    Args:
-        headers: The authorization headers.
-    """
-
-    __slots__ = ("headers",)
-    headers: dict[str, str]
-
-    def __init__(self, headers: dict[str, str]):
-        self.headers = headers
+    client: httpx.AsyncClient
 
     async def set_endpoint(self, endpoint: str) -> None:
         """Sets the webhook endpoint URL.
@@ -608,7 +638,7 @@ class ApplicationWebhook:
         Args:
             endpoint (str): The endpoint. Must be a valid HTTPS URL.
         """
-        await set_webhook_endpoint(self.headers, endpoint)
+        await set_webhook_endpoint(self.client, endpoint)
 
     async def get_info(self) -> tuple[str, bool]:
         """Gets information on a webhook endpoint.
@@ -619,9 +649,9 @@ class ApplicationWebhook:
             tuple[str, bool]: A tuple represents (``url``, ``active?``). ``active?``
                 represents whether it's active (verified) or not.
         """
-        resp: dict[str, str | bool] = await get_webhook(self.headers)
-        endpoint: str = resp["endpoint"]  # type: ignore
-        active: bool = resp["active"]  # type: ignore
+        resp: dict[str, Any] = await fetch_webhook(self.client)
+        endpoint: str = resp["endpoint"]
+        active: bool = resp["active"]
 
         return endpoint, active
 
@@ -656,7 +686,7 @@ class ApplicationWebhook:
                 #     "detail": "TLS handshake failure: https://example.com"
                 # }
         """
-        resp: dict = await test_webhook(self.headers, endpoint)
+        resp: dict = await test_webhook(self.client, endpoint)
 
         return {
             "success": resp["success"],

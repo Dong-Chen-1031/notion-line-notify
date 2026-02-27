@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any
 
 import httpx
 
@@ -7,18 +7,17 @@ from .log import logger
 from .models import (
     AccountLinkContext,
     AudioMessageContext,
+    BaseContext,
     BeaconContext,
-    DeviceLinkContext,
-    DeviceUnlinkContext,
     FileMessageContext,
     FollowContext,
     ImageMessageContext,
     JoinContext,
     LeaveContext,
-    LINEThingsScenarioExecutionContext,
     LocationMessageContext,
     MemberJoinContext,
     MemberLeaveContext,
+    MessageContext,
     PostbackContext,
     StickerMessageContext,
     TextMessageContext,
@@ -28,39 +27,61 @@ from .models import (
     VideoViewingCompleteContext,
 )
 
+if TYPE_CHECKING:
+    from linex.application import Client
 
-def add_to_cache(
-    context: Union[
-        TextMessageContext,
-        ImageMessageContext,
-        VideoMessageContext,
-        AudioMessageContext,
-        FileMessageContext,
-        LocationMessageContext,
-        StickerMessageContext
-    ]
+
+def add_to_message_cache(
+    context: MessageContext,
 ) -> None:
     """Adds a message context to the cache."""
     MESSAGES[context.id] = context
+    if len(MESSAGES) > 1000:
+        MESSAGES.pop(next(iter(MESSAGES)))
+
+
+MESSAGE_CONTEXTS: dict[str, type[MessageContext]] = {
+    "text": TextMessageContext,
+    "image": ImageMessageContext,
+    "video": VideoMessageContext,
+    "audio": AudioMessageContext,
+    "file": FileMessageContext,
+    "location": LocationMessageContext,
+    "sticker": StickerMessageContext,
+}
+OTHER_CONTEXTS: dict[str, type[BaseContext]] = {
+    "unsend": UnsendContext,
+    "follow": FollowContext,
+    "unfollow": UnfollowContext,
+    "join": JoinContext,
+    "leave": LeaveContext,
+    "memberJoined": MemberJoinContext,
+    "memberLeft": MemberLeaveContext,
+    "postback": PostbackContext,
+    "videoPlayComplete": VideoViewingCompleteContext,
+    "beacon": BeaconContext,
+    "accountLink": AccountLinkContext,
+}
+
 
 async def process(
-    cls, 
-    payload: dict, 
-    client: httpx.AsyncClient, 
-    headers: dict[str, str]
+    cls: Client,
+    client: httpx.AsyncClient,
+    payload: dict,
 ) -> None:
     """Process the webhook event payload.
 
     Args:
-        cls (:obj:`Client`): A constructed (intiailized) client class.
+        cls (:obj:`Client`): A constructed (initialized) client class.
+        client (:obj:`httpx.AsyncClient`): The httpx async client.
         payload (dict): The webhook event payload sent from LINE.
-        client (:obj:`AsyncClient`): The httpx async client.
-        headers (dict of str: str): The headers.
     """
-    events: list[dict] = payload['events']
+    events: list[dict] = payload["events"]
 
     if not events:
-        settings_link = f"https://manager.line.biz/account/{cls.user.basic_id}/setting/response"
+        settings_link = (
+            f"https://manager.line.biz/account/{cls.user.basic_id}/setting/response"
+        )
         return logger.log(
             "[blue]Successfully verified![/blue] Next:\n"
             "1. Please flip the 'Use Webhook' switch!\n"
@@ -70,95 +91,31 @@ async def process(
             f"[link={settings_link}]✨ Open Settings[/link]"
         )
 
-    args: tuple[httpx.AsyncClient, dict[str, str]] = (client, headers)
-
     def fulfill_pendings(name: str, context: Any):
         for item in list(cls.pending[name]):
             cls.pending[name][item] = context
-    
+
     for event in events:
-        if event['mode'] == 'standby' and cls.ignore_standby:
+        if event["mode"] == "standby" and cls.ignore_standby:
             continue
 
-        if event['type'] == 'message':
-            finder = {
-                "text": TextMessageContext,
-                "image": ImageMessageContext,
-                "video": VideoMessageContext,
-                "audio": AudioMessageContext,
-                "file": FileMessageContext,
-                "location": LocationMessageContext,
-                "sticker": StickerMessageContext
-            }
-            _type = name = event['message']['type']
-            context = finder[_type](event, *args)
-            add_to_cache(context)
-
-        elif event['type'] == 'unsend':
-            name = "unsend"
-            context = UnsendContext(event, *args)
-
-        elif event['type'] == 'follow':
-            name = "follow"
-            context = FollowContext(event, *args)
-
-        elif event['type'] == 'unfollow':
-            name = "unfollow"
-            context = UnfollowContext(event, *args)
-
-        elif event['type'] == 'join':
-            name = "join"
-            context = JoinContext(event, *args)
-
-        elif event['type'] == 'leave':
-            name = "leave"
-            context = LeaveContext(event, *args)
-
-        elif event['type'] == 'memberJoined':
-            name = "member_join"
-            context = MemberJoinContext(event, *args)
-
-        elif event['type'] == 'memberLeft':
-            name = "member_leave"
-            context = MemberLeaveContext(event, *args)
-
-        elif event['type'] == 'postback':
-            name = "postback"
-            context = PostbackContext(event, *args)
-
-        elif event['type'] == 'videoPlayComplete':
-            name = "video_complete"
-            VideoViewingCompleteContext(event, *args)
-
-        elif event['type'] == 'beacon':
-            name = "beacon"
-            BeaconContext(event, *args)
-
-        elif event['type'] == 'accountLink':
-            name = "account_link"
-            AccountLinkContext(event, *args)
-
-        elif event['type'] == 'things':
-            pre_context, name = {
-                "link": (
-                    DeviceLinkContext,
-                    "device_link"
-                ),
-                "unlink": (
-                    DeviceUnlinkContext,
-                    "device_unlink"
-                ),
-                "scenarioResult": (
-                    LINEThingsScenarioExecutionContext, 
-                    "scenario_result"
-                )
-            }[event['things']['type']]
-            context = pre_context(event, *args)
+        if event["type"] == "message":
+            name = event["message"]["type"]
+            ctx = MESSAGE_CONTEXTS.get(name)
+            if ctx is None:
+                logger.warning(f"unknown message type: {name!r} - skipping event")
+                continue
+            context = ctx(client, event)
+            add_to_message_cache(context)
 
         else:
-            raise TypeError(f"Unknown event type: {event['type']!r}")
-        
-        fulfill_pendings(name, context) # type: ignore
+            ctx = OTHER_CONTEXTS.get(event["type"])
+            if ctx is not None:
+                name = event["type"]
+                context = OTHER_CONTEXTS[event["type"]](client, event)
+            else:
+                raise NameError(f"unknown event type: {event['type']}")
 
-        await cls.emit(name, context) # type: ignore
+        fulfill_pendings(name, context)
 
+        await cls.emit(name, context)

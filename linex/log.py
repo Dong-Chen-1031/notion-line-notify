@@ -1,14 +1,18 @@
 from datetime import datetime
+from typing import Any
 
 from rich.console import Console
 
 console = Console()
 
+
 class TimeGenerator:
     def __repr__(self) -> str:
         return f"{datetime.now():%H:%M:%S}"
 
+
 time = TimeGenerator()
+
 
 class logger:
     """Represents a simple logger."""
@@ -29,7 +33,7 @@ class logger:
         console.print_exception()
 
     @staticmethod
-    def log(content: str) -> None:
+    def log(content: Any) -> None:
         """Logs any content to the console with a timestamp.
 
         Args:
@@ -39,7 +43,7 @@ class logger:
             return
 
         console.print(
-            f'[white d]{time}[/white d] ' + content.replace('\n', f'\n{" " * 9}')
+            f"[white d]{time}[/white d] " + str(content).replace("\n", f"\n{' ' * 9}")
         )
 
     class routing:
@@ -55,9 +59,7 @@ class logger:
             if logger.disabled:
                 return
 
-            logger.log(
-                f"[green]{method}[/green] {route} - {message}"
-            )
+            logger.log(f"[green]{method}[/green] {route} - {message}")
 
         @staticmethod
         def fail(method: str, route: str, message: str):
@@ -71,6 +73,4 @@ class logger:
             if logger.disabled:
                 return
 
-            logger.log(
-                f"[red]{method}[/red] {route} - {message}"
-            )
+            logger.log(f"[red]{method}[/red] {route} - {message}")

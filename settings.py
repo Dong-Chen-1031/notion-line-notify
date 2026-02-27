@@ -4,18 +4,29 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-GROUP_ID = os.getenv("GROUP_ID", "")
+DEV_MODE: bool = os.getenv("DEV_MODE", "False").lower() in ("true", "1", "t")
 
-NOTION_TOKEN = os.getenv("NOTION_TOKEN", "")
+if DEV_MODE:
+    load_dotenv(".env.dev", override=True)
 
-GC_TOKEN_PATH = os.getenv("GC_TOKEN_PATH", "keys/token.json")
+GROUP_ID: str = os.getenv("GROUP_ID", "")
 
-GC_CREDENTIALS_PATH = os.getenv("GC_CREDENTIALS_PATH", "keys/credentials.json")
+NOTION_TOKEN: str = os.getenv("NOTION_TOKEN", "")
 
-LINE_DEVS_ID = os.getenv("LINE_DEVS_ID", "")
+GC_TOKEN_PATH: str = os.getenv("GC_TOKEN_PATH", "keys/token.json")
 
-PORT = int(os.getenv("PORT", "11111"))
+GC_CREDENTIALS_PATH: str = os.getenv("GC_CREDENTIALS_PATH", "keys/credentials.json")
 
+LINE_DEVS_ID: list[str] = [
+    dev_id.strip() for dev_id in os.getenv("LINE_DEVS_ID", "").split(",") if dev_id.strip()
+]
 
-LINE_TOKEN = os.getenv("LINE_TOKEN", "")
-CHANNEL_SECRET = os.getenv("CHANNEL_SECRET", "")
+PORT: int = int(os.getenv("PORT", "11111"))
+
+LINE_TOKEN: str = os.getenv("LINE_TOKEN", "")
+
+CHANNEL_SECRET: str = os.getenv("CHANNEL_SECRET", "")
+
+NOTION_DATABASE_ID: str = os.getenv("NOTION_DATABASE_ID", "")
+
+CDN_BASE: str = os.getenv("CDN_BASE", "")
