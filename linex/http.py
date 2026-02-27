@@ -139,7 +139,7 @@ async def set_webhook_endpoint(client: httpx.AsyncClient, endpoint: str) -> dict
 
     resp = await client.put(
         API_ENDPOINT + "/bot/channel/webhook/endpoint",
-        json={"endpoint": endpoint},
+        json={"endpoint": endpoint} if endpoint is not None else {},
     )
     return resp.json()
 
