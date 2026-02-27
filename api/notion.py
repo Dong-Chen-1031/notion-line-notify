@@ -51,9 +51,7 @@ async def get_upcoming_tasks() -> list[Task]:
         "262be96b-9601-8014-bb40-000b34f82910",
         filter={
             "property": "截止日期",
-            "date": {
-                "on_or_after": datetime.now(ZoneInfo("Asia/Taipei")).date().isoformat()
-            },
+            "date": {"after": datetime.now(ZoneInfo("Asia/Taipei")).date().isoformat()},
         },
         sorts=[
             {"property": "截止日期", "direction": "ascending"},
