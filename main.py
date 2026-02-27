@@ -117,11 +117,48 @@ def create_line_message(tasks: list[Task]) -> Flex:
                 "layout": "vertical",
                 "contents": [
                     {
-                        "type": "text",
-                        "text": f"{date} 的作業",
-                        "weight": "bold",
-                        "size": "xl",
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": f"星期{weekday_to_chinese[now.weekday()]}",
+                                        "color": "#fc4e42",
+                                        "align": "center",
+                                        "size": "xs",
+                                        "offsetTop": "4px",
+                                    },
+                                    {
+                                        "type": "text",
+                                        "text": f"{now.day}",
+                                        "align": "center",
+                                        "size": "xxl",
+                                    },
+                                ],
+                                "cornerRadius": "md",
+                                "alignItems": "center",
+                                "backgroundColor": "#f1f1f1",
+                                "justifyContent": "center",
+                                "width": "60px",
+                                "height": "60px",
+                            },
+                            {
+                                "type": "text",
+                                "text": "今日提醒事項",
+                                "weight": "bold",
+                                "size": "xl",
+                            },
+                        ],
+                        "justifyContent": "flex-start",
+                        "alignItems": "center",
+                        "spacing": "20px",
+                        "paddingBottom": "12px",
                     },
+                    {"type": "separator"},
                     {
                         "type": "box",
                         "layout": "vertical",
@@ -182,6 +219,8 @@ async def scheduled_send_message():
         return
     await send_message()
 
+
+# fc4e42
 
 scheduler.add_job(
     scheduled_send_message,

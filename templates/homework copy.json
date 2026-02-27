@@ -23,84 +23,18 @@
             "contents": [
               {
                 "type": "text",
-                "text": "國文",
+                "text": "{{subject}}",
                 "color": "#aaaaaa",
                 "size": "sm",
-                "flex": 1
+                "flex": 2
               },
               {
                 "type": "text",
-                "text": "1. 明天成績處理截止",
+                "text": "{{content}}",
                 "wrap": true,
                 "color": "#666666",
                 "size": "sm",
-                "flex": 5
-              }
-            ]
-          },
-          {
-            "type": "box",
-            "layout": "baseline",
-            "spacing": "sm",
-            "contents": [
-              {
-                "type": "text",
-                "text": "英文",
-                "color": "#aaaaaa",
-                "size": "sm",
-                "flex": 1
-              },
-              {
-                "type": "text",
-                "wrap": true,
-                "color": "#666666",
-                "size": "sm",
-                "flex": 5,
-                "text": "1. 明天考L8課本單字全\n2. 明天交All in one L8+講義L8\n3. 明天考L7大卷(自習課)"
-              }
-            ]
-          },
-          {
-            "type": "box",
-            "layout": "baseline",
-            "spacing": "sm",
-            "contents": [
-              {
-                "type": "text",
-                "text": "化學",
-                "color": "#aaaaaa",
-                "size": "sm",
-                "flex": 1
-              },
-              {
-                "type": "text",
-                "wrap": true,
-                "color": "#666666",
-                "size": "sm",
-                "flex": 5,
-                "text": "1. 6/26(一)交習作+講義"
-              }
-            ]
-          },
-          {
-            "type": "box",
-            "layout": "baseline",
-            "spacing": "sm",
-            "contents": [
-              {
-                "type": "text",
-                "text": "地理",
-                "color": "#aaaaaa",
-                "size": "sm",
-                "flex": 1
-              },
-              {
-                "type": "text",
-                "wrap": true,
-                "color": "#666666",
-                "size": "sm",
-                "flex": 5,
-                "text": "1. 明天 23:59 前交世界體系作業"
+                "flex": 6
               }
             ]
           }
