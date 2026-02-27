@@ -17,7 +17,9 @@ GC_TOKEN_PATH: str = os.getenv("GC_TOKEN_PATH", "keys/token.json")
 
 GC_CREDENTIALS_PATH: str = os.getenv("GC_CREDENTIALS_PATH", "keys/credentials.json")
 
-LINE_DEVS_ID: list[str] = os.getenv("LINE_DEVS_ID", "").split(",")
+LINE_DEVS_ID: list[str] = [
+    dev_id.strip() for dev_id in os.getenv("LINE_DEVS_ID", "").split(",") if dev_id.strip()
+]
 
 PORT: int = int(os.getenv("PORT", "11111"))
 
