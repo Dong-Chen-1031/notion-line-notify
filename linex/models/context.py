@@ -11,7 +11,7 @@ import httpx
 
 from ..cache import GROUPS, USERS
 from ..exceptions import CannotReply
-from ..http import fetch_file, fetch_group_chat_summary, fetch_user, reply
+from ..http import fetch_file, fetch_group_chat_summary, fetch_user, mark_as_read, reply
 from .emoji import Emoji
 from .group import Group, SourceGroup
 from .mention import Mention
@@ -223,9 +223,20 @@ class MessageContext(RepliableContext):
     id: str = field(init=False)
     """The ID of the message."""
 
+    mark_as_read_token: str = field(init=False)
+
     def __post_init__(self):
         super().__post_init__()
         self.id = self.payload["message"]["id"]
+        self.mark_as_read_token = self.payload["message"]["markAsReadToken"]
+
+    async def mark_as_read(self):
+        """Marks this message as read."""
+        await mark_as_read(
+            self.client,
+            self.headers,
+            self.mark_as_read_token,
+        )
 
 
 @dataclass

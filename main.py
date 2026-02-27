@@ -38,10 +38,14 @@ async def on_join(ctx: TextMessageContext):
 
 @client.command(name="test")
 async def test(ctx: TextMessageContext):
-    author = await ctx.fetch_user()
-    if author.id != LINE_DEVS_ID:
+    print("test command")
+    if ctx.source_type != "user":
         return
-    # await send_message()
+
+    author = ctx.source_as_user()
+    if author.id not in LINE_DEVS_ID:
+        return
+
     await ctx.reply(create_line_message(await get_upcoming_tasks()))
 
 

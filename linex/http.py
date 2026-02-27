@@ -67,6 +67,17 @@ async def reply(
     return resp.json()
 
 
+async def mark_as_read(client: httpx.AsyncClient, headers: dict, mar_token: str):
+    resp = await client.post(
+        API_ENDPOINT + "/bot/chat/markAsRead",
+        headers=headers,
+        json={
+            "markAsReadToken": mar_token,
+        },
+    )
+    assert resp.status_code == 200
+
+
 async def push(
     client: httpx.AsyncClient,
     headers: dict,
@@ -95,9 +106,7 @@ async def fetch_user(
 ) -> dict[str, str]:
     await rr_getUser.call()
 
-    resp = await client.get(
-        API_ENDPOINT + f"https://api.line.me/v2/bot/profile/{user_id}", headers=headers
-    )
+    resp = await client.get(API_ENDPOINT + f"/bot/profile/{user_id}", headers=headers)
     return resp.json()
 
 
