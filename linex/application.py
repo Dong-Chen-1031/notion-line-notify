@@ -542,8 +542,6 @@ class Client:
     ):
         """Sends a push message to either a group or a user.
 
-        Could only used **once** for each message.
-
         Args:
             *messages (str | Any): The messages to send.
             sender (:obj:`Sender`, optional): The sender.
