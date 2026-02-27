@@ -35,10 +35,13 @@ class QuickReplyButton:
     image_url: str | None = None
 
     def to_json(self) -> dict[str, Any]:
-        return {
+        payload = {
             "type": "action",
             "action": self.action.to_json()
             if isinstance(self.action, AbstractLineAction)
             else self.action,
-            "imageUrl": self.image_url,
         }
+        if self.image_url:
+            payload["imageUrl"] = self.image_url
+
+        return payload
