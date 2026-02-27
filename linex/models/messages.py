@@ -88,18 +88,16 @@ class Image(AbstractLineMessage):
     original: str
     preview: str
 
-    def __init__(
-        self, original_content_url: str, preview_content_url: Optional[str] = None
-    ):
+    def __init__(self, original_content_url: str, preview_image_url: str | None = None):
         self.original = original_content_url
-        self.preview = preview_content_url or original_content_url
+        self.preview = preview_image_url or original_content_url
 
     def to_json(self):
         """Converts to a valid JSON payload."""
         return {
             "type": "image",
             "originalContentUrl": self.original,
-            "previewContentUrl": self.preview,
+            "previewImageUrl": self.preview,
         }
 
 
