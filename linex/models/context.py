@@ -129,6 +129,12 @@ class BaseContext:
         assert self.source is not None and self.source_type == "room"
         return SourceMultiPerson.from_json(self.source)
 
+    @property
+    def source_user(self) -> SourceUser:
+        """The source user object."""
+        assert self.source is not None
+        return SourceUser.from_json(self.source)
+
     async def fetch_user(self) -> User:
         """Fetches the author. (coroutine)"""
         assert self.source is not None
