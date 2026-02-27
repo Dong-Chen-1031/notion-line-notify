@@ -124,7 +124,7 @@ class BaseContext:
     def source_as_multi_person(self) -> SourceMultiPerson:
         """Casts the source as a multi-person chat.
 
-        Raises an error if the source type is not `user`.
+        Raises an error if the source type is not `room`.
         """
         assert self.source is not None and self.source_type == "room"
         return SourceMultiPerson.from_json(self.source)
