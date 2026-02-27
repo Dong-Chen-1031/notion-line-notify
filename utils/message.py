@@ -28,11 +28,11 @@ def smarter_format_date(date: datetime) -> str:
             return date.strftime("%m/%d") + f" ({weekday_to_chinese[date.weekday()]})"
 
 
-def create_line_message(subject_tasks: list[Task]) -> Flex:
+def create_line_message(tasks: list[Task]) -> Flex:
     now = datetime.now(ZoneInfo("Asia/Taipei"))
     date = f"{now.month}/{now.day} ({weekday_to_chinese[now.weekday()]})"
     tasks_by_subject: dict[str, list[Task]] = {}
-    for task in subject_tasks:
+    for task in tasks:
         tasks_by_subject.setdefault(task.subject, []).append(task)
 
     tasks_str_by_subject: dict[str, list[str]] = {}
@@ -135,7 +135,7 @@ def create_line_message(subject_tasks: list[Task]) -> Flex:
             },
             "styles": {"header": {"separator": False}},
         },
-        alt_text=create_alt_text(subject_tasks),
+        alt_text=create_alt_text(tasks),
     )
     return message
 
