@@ -72,7 +72,10 @@ async def mark_as_read(client: httpx.AsyncClient, mar_token: str):
             "markAsReadToken": mar_token,
         },
     )
-    assert resp.status_code == 200
+    if resp.status_code != 200:
+        raise RuntimeError(
+            "error while marking as read:\n" + json.dumps(resp.json(), indent=2)
+        )
 
 
 async def display_loading(
@@ -82,6 +85,10 @@ async def display_loading(
         API_ENDPOINT + "/bot/message/reply",
         json={"chatId": chat_id, "loadingSeconds": seconds},
     )
+    if resp.status_code != 200:
+        raise RuntimeError(
+            "error while displaying loading:\n" + json.dumps(resp.json(), indent=2)
+        )
     return resp.json()
 
 
@@ -100,6 +107,8 @@ async def push(
             "notificationDisabled": notificationDisabled,
         },
     )
+    if resp.status_code != 200:
+        raise RuntimeError("error while pushing:\n" + json.dumps(resp.json(), indent=2))
     return resp.json()
 
 
