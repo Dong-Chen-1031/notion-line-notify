@@ -78,7 +78,7 @@ class Mention:
         """Check whether a user / the bot is being mentioned in a message or not.
 
         Args:
-            mentionees (list of dict of str: int | str): The mentionees of the message.
+            mentionees (list[Mention]): The mentionees of the message.
             user (:obj:`BotUser` | :obj:`User` | str): The user to check for. Could be a user ID or object.
         """
         for mention in mentionees:
