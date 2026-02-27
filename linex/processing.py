@@ -72,7 +72,7 @@ async def process(
     """Process the webhook event payload.
 
     Args:
-        cls (:obj:`Client`): A constructed (intiailized) client class.
+        cls (:obj:`Client`): A constructed (initialized) client class.
         client (:obj:`httpx.AsyncClient`): The httpx async client.
         payload (dict): The webhook event payload sent from LINE.
     """
