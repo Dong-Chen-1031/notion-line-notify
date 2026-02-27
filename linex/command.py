@@ -38,7 +38,7 @@ class Command:
 
             if _type not in (str, int, float, bool):
                 raise TypeError(
-                    f"Postback handler {self.func.__name__}:\n"
+                    f"Command handler {self.func.__name__}:\n"
                     f"Argument '{name}' is not a supported type. "
                     "(From str, int, float, and bool.)"
                 )
