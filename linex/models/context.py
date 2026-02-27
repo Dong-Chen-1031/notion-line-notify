@@ -135,6 +135,18 @@ class BaseContext:
         assert self.source is not None
         return SourceUser.from_json(self.source)
 
+    @property
+    def source_group(self) -> SourceGroup:
+        """The source group object."""
+        assert self.source is not None
+        return SourceGroup.from_json(self.source)
+
+    @property
+    def source_multi_person(self) -> SourceMultiPerson:
+        """The source multi-person chat object."""
+        assert self.source is not None
+        return SourceMultiPerson.from_json(self.source)
+
     async def fetch_user(self) -> User:
         """Fetches the author. (coroutine)"""
         assert self.source is not None
