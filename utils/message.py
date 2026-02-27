@@ -136,7 +136,7 @@ def create_line_message(tasks: list[Task]) -> Flex:
         alt_text=f"{date} 的作業\n"
         + "\n".join(
             [
-                f"{subject}:\n{tasks_str}"
+                f"{subject}:\n{'\n'.join(tasks_str)}"
                 for subject, tasks_str in tasks_str_by_subject.items()
             ]
         ),
