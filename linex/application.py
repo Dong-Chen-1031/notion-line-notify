@@ -140,6 +140,10 @@ class Client:
         @app.exception_handler(Exception)
         async def handle_them_all(*_):
             logger.print_exception()
+            return JSONResponse(
+                status_code=500,
+                content={"message": "oops"},
+            )
 
         @app.get("/")
         async def get_index():
@@ -174,7 +178,10 @@ class Client:
             if dev:
                 logger.print(payload)
 
-            await process(self, client, self.headers, payload)
+            try:
+                await process(self, client, self.headers, payload)
+            except Exception as err:
+                raise err
             return {"message": "happy birthday"}
 
     def event(self, handler: Callable[..., Any]) -> None:

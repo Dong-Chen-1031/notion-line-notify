@@ -78,6 +78,17 @@ async def mark_as_read(client: httpx.AsyncClient, headers: dict, mar_token: str)
     assert resp.status_code == 200
 
 
+async def display_loading(
+    client: httpx.AsyncClient, headers: dict, chat_id: str, seconds: int | None
+) -> dict:
+    resp = await client.post(
+        API_ENDPOINT + "/bot/message/reply",
+        headers=headers,
+        json={"chatId": chat_id, "loadingSeconds": seconds},
+    )
+    return resp.json()
+
+
 async def push(
     client: httpx.AsyncClient,
     headers: dict,

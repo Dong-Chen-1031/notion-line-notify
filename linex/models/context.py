@@ -11,7 +11,14 @@ import httpx
 
 from ..cache import GROUPS, USERS
 from ..exceptions import CannotReply
-from ..http import fetch_file, fetch_group_chat_summary, fetch_user, mark_as_read, reply
+from ..http import (
+    display_loading,
+    fetch_file,
+    fetch_group_chat_summary,
+    fetch_user,
+    mark_as_read,
+    reply,
+)
 from .emoji import Emoji
 from .group import Group, SourceGroup
 from .mention import Mention
@@ -150,6 +157,36 @@ class BaseContext:
         )
         GROUPS[group.id] = group
         return group
+
+    async def display_loading(self, seconds: int | None):
+        """Display a loading animation in one-on-one chats between users and LINE Official Accounts.
+
+        The loading animation will automatically disappear after the specified number of seconds (5 to 60 seconds)
+        has elapsed or when a new message arrives from your LINE Official Account.
+
+        The loading animation is only displayed when the user is viewing the chat screen with your LINE Official Account.
+        If you request to display the loading animation when the user isn't viewing the chat screen, no notification will
+        be displayed. Even if the user opens the chat screen later, the animation won't be displayed.
+
+        If you request to display the loading animation again while it is still visible, the animation will continue to
+        be displayed and the time until it disappears will be overridden by the number of seconds specified in the second
+        request.
+
+        Args:
+            seconds (int, optional): The number of seconds. Should be between 5-60 (inclusive) and should be
+                divisible by 5. Defaults to 20.
+        """
+        assert self.source_type == "user"
+        if seconds is not None:
+            assert 5 <= seconds <= 60 and seconds % 5 == 0, (
+                "specified duration does not match requirement; see docs"
+            )
+
+        await display_loading(
+            self.client, self.headers, self.source_as_user().id, seconds
+        )
+
+    defer = display_loading
 
 
 @dataclass

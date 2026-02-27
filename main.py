@@ -9,10 +9,7 @@ from linex import Client, TextMessageContext, logger
 from linex.models.messages import Flex
 from settings import CHANNEL_SECRET, GROUP_ID, LINE_DEVS_ID, LINE_TOKEN, PORT
 
-client = Client(
-    CHANNEL_SECRET,
-    LINE_TOKEN,
-)
+client = Client(CHANNEL_SECRET, LINE_TOKEN)
 
 scheduler = AsyncIOScheduler()
 
@@ -38,15 +35,16 @@ async def on_join(ctx: TextMessageContext):
 
 @client.command(name="test")
 async def test(ctx: TextMessageContext):
-    print("test command")
     if ctx.source_type != "user":
-        return
+        return await ctx.mark_as_read()
 
     author = ctx.source_as_user()
     if author.id not in LINE_DEVS_ID:
         return
 
-    await ctx.reply(create_line_message(await get_upcoming_tasks()))
+    await ctx.mark_as_read()
+    tasks = await get_upcoming_tasks()
+    await ctx.reply(create_line_message(tasks))
 
 
 @client.event
@@ -54,6 +52,7 @@ async def on_text(ctx: TextMessageContext):
     if ctx.text in ["send", "group", "test"]:
         return
     if ctx.source_type == "user":
+        await ctx.mark_as_read()
         await ctx.reply("有讀狀態訊息的同學都知道，不要私訊我，要私訊請找另一個 Dong。")
 
 
