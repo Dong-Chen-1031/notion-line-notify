@@ -6,12 +6,15 @@ from .rate_limiting import RateLimit
 
 rr_botInfo = RateLimit.other()
 
+API_ENDPOINT = "https://api.line.me/v2"
+DATA_ENDPOINT = "https://api-data.line.me/v2"
+
 
 async def get_bot_info(headers: dict) -> dict:
     await rr_botInfo.call()
 
     async with httpx.AsyncClient() as client:
-        resp = await client.get("https://api.line.me/v2/bot/info", headers=headers)
+        resp = await client.get(API_ENDPOINT + "/bot/info", headers=headers)
         return resp.json()
 
 
@@ -23,7 +26,7 @@ async def get_group_member_count(headers: dict, group_id: str) -> dict:
 
     async with httpx.AsyncClient() as client:
         resp = await client.get(
-            f"https://api.line.me/v2/bot/group/{group_id}/members/count",
+            API_ENDPOINT + f"/bot/group/{group_id}/members/count",
             headers=headers,
         )
         return resp.json()
@@ -38,7 +41,7 @@ async def fetch_group_chat_summary(
     await rr_getGroupChat.call()
 
     resp = await client.get(
-        f"https://api.line.me/v2/bot/group/{group_id}/summary", headers=headers
+        API_ENDPOINT + f"/bot/group/{group_id}/summary", headers=headers
     )
 
     return resp.json()
@@ -53,7 +56,7 @@ async def reply(
 ) -> dict:
     # op(messages)
     resp = await client.post(
-        "https://api.line.me/v2/bot/message/reply",
+        API_ENDPOINT + "/bot/message/reply",
         headers=headers,
         json={
             "replyToken": reply_token,
@@ -73,7 +76,7 @@ async def push(
 ) -> dict:
     # op(messages)
     resp = await client.post(
-        "https://api.line.me/v2/bot/message/push",
+        API_ENDPOINT + "/bot/message/push",
         headers=headers,
         json={
             "to": to,
@@ -93,7 +96,7 @@ async def fetch_user(
     await rr_getUser.call()
 
     resp = await client.get(
-        f"https://api.line.me/v2/bot/profile/{user_id}", headers=headers
+        API_ENDPOINT + f"https://api.line.me/v2/bot/profile/{user_id}", headers=headers
     )
     return resp.json()
 
@@ -115,7 +118,7 @@ async def set_webhook_endpoint(headers: dict, endpoint: str) -> dict:
 
     async with httpx.AsyncClient() as client:
         resp = await client.put(
-            "https://api.line.me/v2/bot/channel/webhook/endpoint",
+            API_ENDPOINT + "/bot/channel/webhook/endpoint",
             headers=headers,
             json={"endpoint": endpoint},
         )
@@ -130,7 +133,7 @@ async def get_webhook(headers: dict) -> dict[str, str | bool]:
 
     async with httpx.AsyncClient() as client:
         resp = await client.get(
-            "https://api.line.me/v2/bot/channel/webhook/endpoint", headers=headers
+            API_ENDPOINT + "/bot/channel/webhook/endpoint", headers=headers
         )
         return resp.json()
 
@@ -145,7 +148,7 @@ async def test_webhook(
 
     async with httpx.AsyncClient() as client:
         resp = await client.post(
-            "https://api.line.me/v2/bot/channel/webhook/test",
+            API_ENDPOINT + "/bot/channel/webhook/test",
             headers=headers,
             json={
                 "endpoint": endpoint,
@@ -155,7 +158,7 @@ async def test_webhook(
 
 
 async def fetch_file(headers: dict, client: httpx.AsyncClient, message_id: str):
-    url = f"https://api-data.line.me/v2/bot/message/{message_id}/content"
+    url = DATA_ENDPOINT + f"/bot/message/{message_id}/content"
 
     resp = await client.get(url, headers=headers)
 
