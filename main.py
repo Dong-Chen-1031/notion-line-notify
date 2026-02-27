@@ -5,7 +5,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from objprint import op
 
 from api.notion import Task, get_upcoming_tasks
-from linex import Client, TextMessageContext, logger
+from linex import Client, JoinContext, TextMessageContext, logger
 from linex.models.messages import Flex
 from settings import CHANNEL_SECRET, GROUP_ID, LINE_DEVS_ID, LINE_TOKEN, PORT
 
@@ -30,7 +30,7 @@ async def send(ctx: TextMessageContext):
 
 
 @client.event
-async def on_join(ctx: TextMessageContext):
+async def on_join(ctx: JoinContext):
     op(await ctx.fetch_group())
 
 

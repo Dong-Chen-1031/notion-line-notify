@@ -37,7 +37,7 @@ async def fetch_group_chat_summary(
     await rr_getGroupChat.call()
 
     resp = await client.get(API_ENDPOINT + f"/bot/group/{group_id}/summary")
-
+    resp.raise_for_status()
     return resp.json()
 
 
