@@ -7,6 +7,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from linex.log import logger
+from settings import GC_CLASS_ID, GC_TOKEN_PATH
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = [
@@ -16,7 +17,7 @@ SCOPES = [
 
 
 def login(
-    token_path: str = "token.json", credentials_path: str = "credentials.json"
+    token_path: str = GC_TOKEN_PATH, credentials_path: str = "keys/credentials.json"
 ) -> None:
     """
     login to Google Classroom and save the credentials to token.json for future use.
@@ -40,7 +41,7 @@ def login(
 
 
 def send_announcement(
-    text: str, courseId: int = 825932668195, token_path: str = "token.json"
+    text: str, courseId: int = GC_CLASS_ID, token_path: str = GC_TOKEN_PATH
 ) -> None:
     """
     Sends an announcement to the specified course.
@@ -65,7 +66,7 @@ def send_announcement(
         logger.log(f"An error occurred: {error}")
 
 
-def list_courses(pageSize: int = 10, token_path: str = "token.json"):
+def list_courses(pageSize: int = 30, token_path: str = GC_TOKEN_PATH):
     if os.path.exists(token_path):
         creds = Credentials.from_authorized_user_file(token_path, SCOPES)
     else:
@@ -82,11 +83,13 @@ def list_courses(pageSize: int = 10, token_path: str = "token.json"):
             return
         print("Courses:")
         for course in courses:
-            print(course["name"])
+            print(course["name"], course["id"])
 
     except HttpError as error:
         logger.log(f"An error occurred: {error}")
 
 
-if __name__ == "__main__":
-    login()
+def test():
+    token_path = "keys/token.json"
+    login(token_path=token_path)
+    list_courses(token_path=token_path)
