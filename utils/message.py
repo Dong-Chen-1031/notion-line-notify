@@ -160,6 +160,6 @@ def create_gc_msg(tasks: list[Task]) -> str:
     max_len = max(len(task.subject) for task in tasks)
     for task in tasks:
         lines.append(
-            f"{task.subject}{'　' * (max_len - len(task.subject) + 1)}|　{smarter_format_date(task.deadline)} {task.name}　(截止日期: {task.deadline.strftime('%Y-%m-%d')})"
+            f"{task.subject}{'　' * (max_len - len(task.subject) + 1)}|　{smarter_format_date(task.deadline)} {task.name}(截止日期: {task.deadline.strftime('%Y-%m-%d')})"
         )
     return "\n".join(lines)
