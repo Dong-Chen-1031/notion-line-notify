@@ -101,7 +101,7 @@ async def send_message(LINE=True, GC=True, DEVELOP=False):
         )
     if GC:
         send_functions.append(
-            await asyncio.to_thread(
+            asyncio.to_thread(
                 send_announcement,
                 create_gc_msg(tasks),
                 GC_CLASS_ID if not DEVELOP else GC_CLASS_ID_DEV,
