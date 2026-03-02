@@ -81,37 +81,16 @@ class Client:
         "webhook",
         "_commands",
         "start_kwargs",
+        "handlers",
+        "pending",
     )
 
     app: FastAPI
     client: httpx.AsyncClient
     channel_secret: str
     channel_access_token: str
-    handlers: dict[str, list[Callable[..., Any]]] = {
-        "ready": [],
-        "text": [],
-        "image": [],
-        "audio": [],
-        "file": [],
-        "location": [],
-        "sticker": [],
-        "video": [],
-        "unsend": [],
-        "follow": [],
-        "unfollow": [],
-        "join": [],
-        "leave": [],
-        "member_join": [],
-        "member_leave": [],
-        "postback": [],
-        "video_complete": [],
-        "beacon": [],
-        "account_link": [],
-        "device_link": [],
-        "device_unlink": [],
-        "scenario_result": [],
-    }
-    pending: dict[str, dict[str, Any]] = {name: {} for name in list(handlers)}
+    handlers: dict[str, list[Callable[..., Any]]]
+    pending: dict[str, dict[str, Any]]
     headers: dict
     is_ready: bool
     user: BotUser
@@ -136,6 +115,31 @@ class Client:
 
         self.is_ready = False
         self.ignore_standby = ignore_standby
+        self.handlers = {
+            "ready": [],
+            "text": [],
+            "image": [],
+            "audio": [],
+            "file": [],
+            "location": [],
+            "sticker": [],
+            "video": [],
+            "unsend": [],
+            "follow": [],
+            "unfollow": [],
+            "join": [],
+            "leave": [],
+            "member_join": [],
+            "member_leave": [],
+            "postback": [],
+            "video_complete": [],
+            "beacon": [],
+            "account_link": [],
+            "device_link": [],
+            "device_unlink": [],
+            "scenario_result": [],
+        }
+        self.pending = {name: {} for name in self.handlers}
 
         if disable_logs:
             logger.disabled = True
@@ -241,6 +245,7 @@ class Client:
                 return True
 
         return False
+
     async def emit(self, name: str, *data) -> None:
         """Emits a specific event.
 
@@ -291,10 +296,11 @@ class Client:
 
         await asyncio.gather(*handlers, return_exceptions=True)
 
-    def run(self, **kwargs):
+    def run(self, debug: bool = False, **kwargs):
         """Runs the bot.
 
         Args:
+            debug (bool, optional): Whether to enable debug mode or not. If ``True``,
             **kwargs: Arguments for ``uvicorn.run``.
         """
         self.webhook = ApplicationWebhook(self.client)
@@ -305,6 +311,14 @@ class Client:
             "log_level": logging.WARNING,
             **kwargs,
         }
+        if debug:
+            self.start_kwargs.update(
+                {
+                    "reload": True,
+                    "app": "main:client.app",
+                }
+            )
+
         uvicorn.run(**self.start_kwargs)
 
     @asynccontextmanager

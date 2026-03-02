@@ -1,9 +1,11 @@
+import asyncio
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from objprint import op
 
+from api.classroom import send_announcement
 from api.notion import get_upcoming_tasks
 from linex import Client, Image, JoinContext, TextMessageContext, logger
 from settings import (
@@ -15,7 +17,7 @@ from settings import (
     LINE_TOKEN,
     PORT,
 )
-from utils.message import create_line_message
+from utils.message import create_gc_msg, create_line_message
 
 client = Client(CHANNEL_SECRET, LINE_TOKEN)
 
@@ -24,6 +26,7 @@ scheduler = AsyncIOScheduler()
 
 @client.event
 async def on_ready():
+    logger.log("Bot is ready!")
     logger.log(f"Logged in as {client.user.display_name}")
     scheduler.start()
 
@@ -48,20 +51,22 @@ async def classtable(ctx: TextMessageContext):
 
 
 @client.command(name="test")
-async def test(ctx: TextMessageContext):
-    # if ctx.source_type != "user":
-    #     return await ctx.mark_as_read()
-
-    # author = ctx.source_as_user()
-    # if author.id not in LINE_DEVS_ID:
-    #     return
+async def test(ctx: TextMessageContext, mode: str = "all"):
+    mode = mode.lower()
     author = await ctx.fetch_user()
     if author.id not in LINE_DEVS_ID:
         return
 
-    # await ctx.mark_as_read()
+    await ctx.mark_as_read()
+
     tasks = await get_upcoming_tasks()
-    await ctx.reply(create_line_message(tasks))
+    if mode in ("line", "all"):
+        await ctx.reply(create_line_message(tasks))
+    if mode in ("classroom", "gc", "all"):
+        from api.classroom import send_announcement
+
+        await asyncio.to_thread(send_announcement, create_gc_msg(tasks))
+        await ctx.reply("已發送作業訊息到 Google Classroom！")
 
 
 @client.event
@@ -82,10 +87,18 @@ async def on_text(ctx: TextMessageContext):
 async def send_message():
     tasks = await get_upcoming_tasks()
 
-    await client.send_message(
-        GROUP_ID,
-        create_line_message(tasks),
+    send_functions = []
+
+    send_functions.append(
+        client.send_message(
+            GROUP_ID,
+            create_line_message(tasks),
+        )
     )
+    send_functions.append(
+        await asyncio.to_thread(send_announcement, create_gc_msg(tasks))
+    )
+    await asyncio.gather(*send_functions)
 
 
 async def scheduled_send_message():
@@ -103,7 +116,5 @@ scheduler.add_job(
 )
 
 
-if DEV_MODE:
-    app = client.app
-else:
-    client.run(port=PORT)
+if __name__ == "__main__":
+    client.run(port=PORT, debug=DEV_MODE)

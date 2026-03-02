@@ -150,3 +150,16 @@ def create_alt_text(tasks: list[Task]) -> str:
     return f"{task.subject}：「{task.name}」" + (
         f"，還有其他 {len(tasks) - 1} 項" if len(tasks) > 1 else ""
     )
+
+
+def create_gc_msg(tasks: list[Task]) -> str:
+    if len(tasks) == 0:
+        return "今天沒有任何事做，可以內卷了！"
+
+    lines = []
+    max_len = max(len(task.subject) for task in tasks)
+    for task in tasks:
+        lines.append(
+            f"{task.subject}{'　' * (max_len - len(task.subject) + 1)}|　{smarter_format_date(task.deadline)} {task.name}　(截止日期: {task.deadline.strftime('%Y-%m-%d')})"
+        )
+    return "\n".join(lines)
