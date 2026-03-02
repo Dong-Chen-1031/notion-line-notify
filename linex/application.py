@@ -301,6 +301,7 @@ class Client:
 
         Args:
             debug (bool, optional): Whether to enable debug mode or not. If ``True``,
+                enables hot-reloading via uvicorn. Assumes entry point is ``main:client.app``.
             **kwargs: Arguments for ``uvicorn.run``.
         """
         self.webhook = ApplicationWebhook(self.client)
