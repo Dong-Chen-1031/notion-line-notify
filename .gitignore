@@ -10,6 +10,7 @@ lerna-debug.log*
 keys/
 
 .env
+.env.dev
 
 node_modules
 dist

@@ -41,11 +41,15 @@ async def on_join(ctx: JoinContext):
 
 
 @client.command(name="send")
-async def send(ctx: TextMessageContext):
+async def send(ctx: TextMessageContext, mode: str = "all"):
     author = await ctx.fetch_user()
     if author.id not in LINE_DEVS_ID:
         return
-    await send_message()
+    await send_message(
+        LINE=mode in ("line", "all"),
+        GC=mode in ("classroom", "gc", "all"),
+        DEVELOP=DEV_MODE,
+    )
     await ctx.reply("已發送作業訊息到群組！")
 
 
