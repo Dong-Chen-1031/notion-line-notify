@@ -90,5 +90,6 @@ def list_courses(pageSize: int = 30, token_path: str = GC_TOKEN_PATH):
 
 
 def test():
-    login()
-    list_courses(token_path="keys/token.json")
+    token_path = "keys/token.json"
+    login(token_path=token_path)
+    list_courses(token_path=token_path)
