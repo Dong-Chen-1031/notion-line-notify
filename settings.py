@@ -13,10 +13,6 @@ GROUP_ID: str = os.getenv("GROUP_ID", "")
 
 NOTION_TOKEN: str = os.getenv("NOTION_TOKEN", "")
 
-GC_TOKEN_PATH: str = os.getenv("GC_TOKEN_PATH", "keys/token.json")
-
-GC_CREDENTIALS_PATH: str = os.getenv("GC_CREDENTIALS_PATH", "keys/credentials.json")
-
 LINE_DEVS_ID: list[str] = [
     dev_id.strip()
     for dev_id in os.getenv("LINE_DEVS_ID", "").split(",")
