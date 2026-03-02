@@ -12,6 +12,10 @@ from settings import (
     CDN_BASE,
     CHANNEL_SECRET,
     DEV_MODE,
+    GC_CLASS_ID,
+    GC_CLASS_ID_DEV,
+    GC_TOKEN_PATH,
+    GC_TOKEN_PATH_DEV,
     GROUP_ID,
     LINE_DEVS_ID,
     LINE_TOKEN,
@@ -63,10 +67,9 @@ async def test(ctx: TextMessageContext, mode: str = "all"):
     if mode in ("line", "all"):
         await ctx.reply(create_line_message(tasks))
     if mode in ("classroom", "gc", "all"):
-        from api.classroom import send_announcement
+        await send_message(LINE=False, GC=True, DEVELOP=True)
 
-        await asyncio.to_thread(send_announcement, create_gc_msg(tasks))
-        await ctx.reply("已發送作業訊息到 Google Classroom！")
+    await ctx.reply("已發送作業訊息！")
 
 
 @client.event
@@ -84,20 +87,27 @@ async def on_text(ctx: TextMessageContext):
         )
 
 
-async def send_message():
+async def send_message(LINE=True, GC=True, DEVELOP=False):
     tasks = await get_upcoming_tasks()
 
     send_functions = []
 
-    send_functions.append(
-        client.send_message(
-            GROUP_ID,
-            create_line_message(tasks),
+    if LINE:
+        send_functions.append(
+            client.send_message(
+                GROUP_ID,
+                create_line_message(tasks),
+            )
         )
-    )
-    send_functions.append(
-        await asyncio.to_thread(send_announcement, create_gc_msg(tasks))
-    )
+    if GC:
+        send_functions.append(
+            await asyncio.to_thread(
+                send_announcement,
+                create_gc_msg(tasks),
+                GC_CLASS_ID if not DEVELOP else GC_CLASS_ID_DEV,
+                GC_TOKEN_PATH if not DEVELOP else GC_TOKEN_PATH_DEV,
+            )
+        )
     await asyncio.gather(*send_functions)
 
 

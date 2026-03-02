@@ -66,7 +66,7 @@ def send_announcement(
         logger.log(f"An error occurred: {error}")
 
 
-def list_courses(pageSize: int = 10, token_path: str = GC_TOKEN_PATH):
+def list_courses(pageSize: int = 30, token_path: str = GC_TOKEN_PATH):
     if os.path.exists(token_path):
         creds = Credentials.from_authorized_user_file(token_path, SCOPES)
     else:
@@ -91,4 +91,4 @@ def list_courses(pageSize: int = 10, token_path: str = GC_TOKEN_PATH):
 
 def test():
     login()
-    list_courses()
+    list_courses(token_path="keys/token.json")
