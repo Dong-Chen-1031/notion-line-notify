@@ -45,11 +45,17 @@ async def send(ctx: TextMessageContext, mode: str = "all"):
     author = await ctx.fetch_user()
     if author.id not in LINE_DEVS_ID:
         return
-    await send_message(
-        LINE=mode in ("line", "all"),
-        GC=mode in ("classroom", "gc", "all"),
-        DEVELOP=DEV_MODE,
-    )
+    mode = mode.strip().lower()
+    allowed_modes = {"line", "classroom", "gc", "all"}
+    if mode not in allowed_modes:
+        await ctx.reply(f"無效的模式：{mode}，請使用 line、classroom、gc 或 all。")
+        return
+    line_flag = mode in ("line", "all")
+    gc_flag = mode in ("classroom", "gc", "all")
+    if not line_flag and not gc_flag:
+        await ctx.reply("無效的模式，請使用 line、classroom、gc 或 all。")
+        return
+    await send_message(LINE=line_flag, GC=gc_flag, DEVELOP=DEV_MODE)
     await ctx.reply("已發送作業訊息到群組！")
 
 
