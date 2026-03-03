@@ -78,7 +78,9 @@ async def on_text(ctx: TextMessageContext):
         return
     if ctx.source_type == "user":
         await ctx.mark_as_read()
+        tasks = await get_upcoming_tasks()
         await ctx.reply(
+            create_line_message(tasks),
             "有讀狀態訊息的同學都知道，不要私訊我，要私訊請找另一個 Dong。",
             Image(
                 original_content_url=CDN_BASE + "/chih-ren.png",
