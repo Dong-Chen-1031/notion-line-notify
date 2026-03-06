@@ -7,7 +7,15 @@ from objprint import op
 
 from api.classroom import send_announcement
 from api.notion import get_upcoming_tasks
-from linex import Client, Image, JoinContext, TextMessageContext, logger
+from linex import (
+    Action,
+    Client,
+    Image,
+    JoinContext,
+    QuickReplyButton,
+    TextMessageContext,
+    logger,
+)
 from settings import (
     CDN_BASE,
     CHANNEL_SECRET,
@@ -22,6 +30,7 @@ from settings import (
     PORT,
 )
 from utils.message import create_gc_msg, create_line_message
+from utils.timeutils import get_now, weekday_to_chinese
 
 client = Client(CHANNEL_SECRET, LINE_TOKEN)
 
@@ -45,23 +54,35 @@ async def send(ctx: TextMessageContext, mode: str = "all"):
     author = await ctx.fetch_user()
     if author.id not in LINE_DEVS_ID:
         return
+
     mode = mode.strip().lower()
     allowed_modes = {"line", "classroom", "gc", "all"}
+
     if mode not in allowed_modes:
         await ctx.reply(f"無效的模式：{mode}，請使用 line、classroom、gc 或 all。")
         return
+
     line_flag = mode in ("line", "all")
     gc_flag = mode in ("classroom", "gc", "all")
     if not line_flag and not gc_flag:
         await ctx.reply("無效的模式，請使用 line、classroom、gc 或 all。")
         return
+
     await send_message(LINE=line_flag, GC=gc_flag, DEVELOP=DEV_MODE)
     await ctx.reply("已發送作業訊息到群組！")
 
 
 @client.command(name="課表")
 async def classtable(ctx: TextMessageContext):
-    await ctx.reply(Image(original_content_url=CDN_BASE + "/classtable.png"))
+    if ctx.source_type == "user":
+        now = get_now()
+        await ctx.reply(
+            f"今天 {now.month}/{now.day} 星期{weekday_to_chinese(now)}",
+            Image(original_content_url=CDN_BASE + "/classtable.png"),
+            quick_replies=[
+                QuickReplyButton(action=Action.Message("提醒事項", label="提醒事項"))
+            ],
+        )
 
 
 @client.command(name="test")
@@ -82,20 +103,31 @@ async def test(ctx: TextMessageContext, mode: str = "all"):
     await ctx.reply("已發送作業訊息！")
 
 
+@client.command(name="提醒事項")
+async def todos(ctx: TextMessageContext):
+    if ctx.source_type == "user":
+        await ctx.display_loading(5)
+        await ctx.mark_as_read()
+        tasks = await get_upcoming_tasks()
+        await ctx.reply(create_line_message(tasks))
+
+
 @client.event
 async def on_text(ctx: TextMessageContext):
     if await client.process_commands(ctx):
         return
+
     if ctx.source_type == "user":
         await ctx.mark_as_read()
-        tasks = await get_upcoming_tasks()
         await ctx.reply(
-            create_line_message(tasks),
             "有讀狀態訊息的同學都知道，不要私訊我，要私訊請找另一個 Dong。",
             Image(
                 original_content_url=CDN_BASE + "/chih-ren.png",
                 preview_image_url=CDN_BASE + "/chih-ren.jpeg",
             ),
+            quick_replies=[
+                QuickReplyButton(action=Action.Message("提醒事項", label="提醒事項"))
+            ],
         )
 
 

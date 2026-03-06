@@ -339,3 +339,19 @@ class Action:
 
         def to_json(self) -> dict[str, Optional[str]]:
             return self.json
+
+    class ClipboardAction(AbstractLineAction):
+        """When a user taps a control associated with this action, the text specified in the
+        `clipboard_text` property is copied to the device clipboard.
+
+        This feature is available on LINE version 14.0.0 or later for iOS or Android.
+        """
+
+        __slots__ = ("json",)
+
+        def __init__(self, clipboard_text: str, label: Optional[str] = None):
+            self.json = {
+                "type": "clipboard",
+                "label": label,
+                "clipboardText": clipboard_text,
+            }
