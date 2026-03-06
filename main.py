@@ -74,15 +74,16 @@ async def send(ctx: TextMessageContext, mode: str = "all"):
 
 @client.command(name="課表")
 async def classtable(ctx: TextMessageContext):
-    if ctx.source_type == "user":
-        now = get_now()
-        await ctx.reply(
-            f"今天 {now.month}/{now.day} 星期{weekday_to_chinese(now)}",
-            Image(original_content_url=CDN_BASE + "/classtable.png"),
-            quick_replies=[
-                QuickReplyButton(action=Action.Message("提醒事項", label="提醒事項"))
-            ],
-        )
+    now = get_now()
+    await ctx.reply(
+        f"今天 {now.month}/{now.day} 星期{weekday_to_chinese(now)}",
+        Image(original_content_url=CDN_BASE + "/classtable.png"),
+        quick_replies=(
+            [QuickReplyButton(action=Action.Message("提醒事項", label="提醒事項"))]
+            if ctx.source_type == "user"
+            else None
+        ),
+    )
 
 
 @client.command(name="test")
