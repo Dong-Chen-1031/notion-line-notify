@@ -51,8 +51,7 @@ async def on_join(ctx: JoinContext):
 
 @client.command(name="send")
 async def send(ctx: TextMessageContext, mode: str = "all"):
-    author = await ctx.fetch_user()
-    if author.id not in LINE_DEVS_ID:
+    if ctx.source_user.id not in LINE_DEVS_ID:
         return
 
     mode = mode.strip().lower()
@@ -89,8 +88,7 @@ async def classtable(ctx: TextMessageContext):
 @client.command(name="test")
 async def test(ctx: TextMessageContext, mode: str = "all"):
     mode = mode.lower()
-    author = await ctx.fetch_user()
-    if author.id not in LINE_DEVS_ID:
+    if ctx.source_user.id not in LINE_DEVS_ID:
         return
 
     await ctx.mark_as_read()
