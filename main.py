@@ -1,4 +1,5 @@
 import asyncio
+import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -109,6 +110,14 @@ async def todos(ctx: TextMessageContext):
         await ctx.mark_as_read()
         tasks = await get_upcoming_tasks()
         await ctx.reply(create_line_message(tasks))
+
+
+@client.command(name="ping")
+async def ping(ctx: TextMessageContext):
+    if ctx.source_user.id not in LINE_DEVS_ID:
+        return
+    await ctx.mark_as_read()
+    await ctx.reply(f"我還著著 ({(time.time() - ctx.timestamp):.2f}s)")
 
 
 @client.event
