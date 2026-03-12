@@ -80,6 +80,8 @@
 #         self.messages = KvCache({}, threshold=messages_threshold or 2000)
 
 
+from typing import Any
+
 USERS: dict[str, Any] = {}
 GROUPS: dict[str, Any] = {}
 MESSAGES: dict[str, Any] = {}
