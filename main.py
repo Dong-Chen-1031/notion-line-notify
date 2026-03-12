@@ -121,7 +121,7 @@ async def ping(ctx: TextMessageContext):
     if ctx.source_user.id not in LINE_DEVS_ID:
         return
     await ctx.mark_as_read()
-    await ctx.reply(f"我還著著 ({(time.time() - ctx.timestamp):.2f}s)")
+    await ctx.reply(f"我還活著 ({(time.time() - ctx.timestamp):.2f}s)")
 
 
 @client.event
