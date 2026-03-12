@@ -40,6 +40,21 @@ class Task:
             data["properties"]["截止日期"]["date"]["start"]
         ).astimezone(ZoneInfo("Asia/Taipei"))
 
+    def dump_model(self) -> dict[str, str]:
+        return {
+            "name": self.name,
+            "subject": self.subject,
+            "deadline": self.deadline.isoformat(),
+        }
+
+    def to_dict(self) -> dict[str, str]:
+        return self.dump_model()
+
+    def __repr__(self) -> str:
+        import json
+
+        return json.dumps(self.dump_model(), ensure_ascii=False)
+
 
 async def get_upcoming_tasks() -> list[Task]:
     """取得所有未來的作業
