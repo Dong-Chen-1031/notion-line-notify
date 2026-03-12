@@ -105,11 +105,15 @@ async def test(ctx: TextMessageContext, mode: str = "all"):
 
 @client.command(name="提醒事項")
 async def todos(ctx: TextMessageContext):
+    if ctx.source_type == "group" and ctx.source_user.id not in LINE_DEVS_ID:
+        return
+
     if ctx.source_type == "user":
         await ctx.display_loading(5)
         await ctx.mark_as_read()
-        tasks = await get_upcoming_tasks()
-        await ctx.reply(create_line_message(tasks))
+
+    tasks = await get_upcoming_tasks()
+    await ctx.reply(create_line_message(tasks))
 
 
 @client.command(name="ping")
