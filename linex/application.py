@@ -21,7 +21,7 @@ from fastapi.responses import JSONResponse
 from linex.command import Command
 from linex.models.context import TextMessageContext
 
-from .cache import GROUPS, MESSAGES, USERS
+from .cache import GROUPS, MESSAGES, USERS, InMemoryCache
 from .exceptions import Unknown
 from .http import (
     fetch_group_chat_summary,
@@ -83,6 +83,7 @@ class Client:
         "start_kwargs",
         "handlers",
         "pending",
+        "cache",
     )
 
     app: FastAPI
@@ -96,6 +97,7 @@ class Client:
     user: BotUser
     ignore_standby: bool
     webhook: ApplicationWebhook
+    cache: InMemoryCache
     _commands: dict[str, Command]
 
     def __init__(
@@ -148,6 +150,8 @@ class Client:
         self.app = app = FastAPI(lifespan=self.lifespan)
         self._commands = {}
         self.start_kwargs = {}
+
+        self.cache = InMemoryCache()
 
         @app.get("/")
         async def get_index():

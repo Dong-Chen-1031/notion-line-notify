@@ -4,6 +4,7 @@ from linex.models.messages import Flex
 from .timeutils import get_now, smarter_format_date
 
 WEEKDAY_TO_CHINESE = ["一", "二", "三", "四", "五", "六", "日"]
+DEFAULT_NO_TASK_MESSAGE = "今天沒有任何事做，可以內卷了！"
 
 
 def create_line_message(tasks: list[Task]) -> Flex:
@@ -119,7 +120,7 @@ def create_line_message(tasks: list[Task]) -> Flex:
 
 def create_alt_text(tasks: list[Task]) -> str:
     if len(tasks) == 0:
-        return "今天沒有任何事做，可以內卷了！"
+        return DEFAULT_NO_TASK_MESSAGE
 
     task = tasks[0]
     return f"{task.subject}：「{task.name}」" + (
@@ -129,12 +130,14 @@ def create_alt_text(tasks: list[Task]) -> str:
 
 def create_gc_msg(tasks: list[Task]) -> str:
     if len(tasks) == 0:
-        return "今天沒有任何事做，可以內卷了！"
+        return DEFAULT_NO_TASK_MESSAGE
 
     lines = []
     max_len = max(len(task.subject) for task in tasks)
     for task in tasks:
         lines.append(
-            f"{task.subject}{'　' * (max_len - len(task.subject) + 1)}|　{smarter_format_date(task.deadline)} {task.name}(截止日期: {task.deadline.strftime('%Y-%m-%d')})"
+            f"{task.subject}{'　' * (max_len - len(task.subject) + 1)}|　"
+            f"{smarter_format_date(task.deadline)} {task.name}"
+            f"(截止日期: {task.deadline.strftime('%Y-%m-%d')})"
         )
     return "\n".join(lines)
