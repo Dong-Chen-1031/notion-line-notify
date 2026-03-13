@@ -42,7 +42,7 @@ scheduler = AsyncIOScheduler()
 async def on_ready():
     logger.log("Bot is ready!")
     logger.log(f"Logged in as {client.user.display_name}")
-    scheduler.start()
+    # scheduler.start()
 
 
 @client.event
