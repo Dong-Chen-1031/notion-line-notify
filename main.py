@@ -25,7 +25,6 @@ from settings import (
     GC_CLASS_ID_DEV,
     GC_TOKEN_PATH,
     GC_TOKEN_PATH_DEV,
-    GROUP_ID,
     LINE_DEVS_ID,
     LINE_TOKEN,
     PORT,
@@ -35,14 +34,14 @@ from utils.timeutils import get_now, weekday_to_chinese
 
 client = Client(CHANNEL_SECRET, LINE_TOKEN)
 
-scheduler = AsyncIOScheduler()
+schedular = AsyncIOScheduler()
 
 
 @client.event
 async def on_ready():
     logger.log("Bot is ready!")
     logger.log(f"Logged in as {client.user.display_name}")
-    # scheduler.start()
+    schedular.start()
 
 
 @client.event
@@ -148,13 +147,13 @@ async def send_message(LINE=True, GC=True, DEVELOP=False):
 
     send_functions = []
 
-    if LINE:
-        send_functions.append(
-            client.send_message(
-                GROUP_ID,
-                create_line_message(tasks),
-            )
-        )
+    # if LINE:
+    #     send_functions.append(
+    #         client.send_message(
+    #             GROUP_ID,
+    #             create_line_message(tasks),
+    #         )
+    #     )
     if GC:
         send_functions.append(
             asyncio.to_thread(
@@ -173,7 +172,7 @@ async def scheduled_send_message():
     await send_message()
 
 
-scheduler.add_job(
+schedular.add_job(
     scheduled_send_message,
     "cron",
     hour=17,
